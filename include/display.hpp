@@ -15,7 +15,7 @@ U8G2_SSD1306_128X64_NONAME_F_SW_I2C u8g2(U8G2_R0, /* clock=*/ 15, /* data=*/ 4, 
 
 class Display {
   public:
-    int lineH = 7;;
+    int lineH = 8;;
     Display () {}
     void init() {
         /*

@@ -1,6 +1,8 @@
 
 #include <Arduino.h>
 #include "display.hpp"
+#include "criptMsg.hpp"
+
 #ifdef ESP32
   #include <WiFi.h>
 #else
@@ -8,24 +10,47 @@
 #endif
 
 Display display = Display();
+CriptMsg crmsg = CriptMsg();
 
-void setup(void)
-{
-  display.init();
 
-  display.print(1, "las doce tribus de ", false);
-  display.print(2, "123456789012345", false);
-  display.print(3, "pepa", true);
-  display.print(3, "pip");
-  display.print(4, "pepa  4");
-  display.print(5, "pepa   5");
-  display.print(6, "pepa    6");
-  display.print(7, WiFi.macAddress().c_str());
-  display.print(8, "pepa      8");
+
+void displayMyMac(){
+  char macStr[22];
+  strcpy(macStr, "Mac ");
+  strcat(macStr,WiFi.macAddress().c_str());
+  display.print(8, macStr);
+
+  Serial.begin(115200);
+  Serial.println("init chacha");
+ 
+  char * plaintext =  "hola! Pepe";
+  uint8_t result[200];
+  int msglen= strlen((char * ) plaintext) +1 ;
+  uint8_t ciphertext[msglen];
+
+  ciphertext[msglen]=0; //ta mu mal pero vale
+  Serial.println(msglen);
+  Serial.println( plaintext);
+
+  crmsg.encrypt(ciphertext, plaintext);
+
+  Serial.println(sizeof(ciphertext));
+  Serial.println((char *) ciphertext);
+
+
+  crmsg.decrypt(result,ciphertext, msglen);
+
+  char* out = (char*) result;
+  Serial.println(strlen(out));
+  Serial.println(out);
+
 }
 
-int i =0;
-void loop(void)
-{
-  delay(200);
+void setup() {
+  display.init();
+  displayMyMac();
+}
+
+void loop() {
+    delay(1000);
 }
