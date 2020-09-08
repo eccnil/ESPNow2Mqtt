@@ -1,0 +1,6 @@
+
+*queue                  max_size:10
+*payload                max_size:128
+response.opResponses    max_count:10
+request.client_id       max_size:10
+request.operations      max_count:10

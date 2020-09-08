@@ -22,44 +22,45 @@ typedef enum _response_Result {
 } response_Result;
 
 /* Struct definitions */
-typedef struct _request {
-    char dummy_field;
-} request;
-
-typedef struct _response {
-    pb_callback_t response;
-} response;
-
 typedef struct _request_Ping {
     int32_t num;
 } request_Ping;
 
-typedef struct _request_Request {
-    pb_callback_t queue;
-    bool clear;
-} request_Request;
-
 typedef struct _request_Send {
-    pb_callback_t queue;
-    pb_callback_t payload;
+    char queue[10];
+    char payload[128];
     bool persist;
 } request_Send;
 
-typedef struct _response_Response {
+typedef struct _request_Subscribe {
+    char queue[10];
+    bool clear;
+} request_Subscribe;
+
+typedef struct _response_OpResponse {
     response_Result result_code;
-    pb_callback_t payload;
-} response_Response;
+    char payload[128];
+} response_OpResponse;
 
 typedef struct _request_Operation {
-    pb_callback_t client_id;
-    pb_callback_t operation;
     pb_size_t which_op;
     union {
         request_Ping ping;
         request_Send send;
-        request_Request request;
+        request_Subscribe qRequest;
     } op;
 } request_Operation;
+
+typedef struct _response {
+    pb_size_t opResponses_count;
+    response_OpResponse opResponses[10];
+} response;
+
+typedef struct _request {
+    char client_id[10];
+    pb_size_t operations_count;
+    request_Operation operations[10];
+} request;
 
 
 /* Helper constants for enums */
@@ -69,42 +70,44 @@ typedef struct _request_Operation {
 
 
 /* Initializer values for message structs */
-#define request_init_default                     {0}
+#define request_init_default                     {"", 0, {request_Operation_init_default, request_Operation_init_default, request_Operation_init_default, request_Operation_init_default, request_Operation_init_default, request_Operation_init_default, request_Operation_init_default, request_Operation_init_default, request_Operation_init_default, request_Operation_init_default}}
 #define request_Ping_init_default                {0}
-#define request_Send_init_default                {{{NULL}, NULL}, {{NULL}, NULL}, 0}
-#define request_Request_init_default             {{{NULL}, NULL}, 0}
-#define request_Operation_init_default           {{{NULL}, NULL}, {{NULL}, NULL}, 0, {request_Ping_init_default}}
-#define response_init_default                    {{{NULL}, NULL}}
-#define response_Response_init_default           {_response_Result_MIN, {{NULL}, NULL}}
-#define request_init_zero                        {0}
+#define request_Send_init_default                {"", "", 0}
+#define request_Subscribe_init_default           {"", 0}
+#define request_Operation_init_default           {0, {request_Ping_init_default}}
+#define response_init_default                    {0, {response_OpResponse_init_default, response_OpResponse_init_default, response_OpResponse_init_default, response_OpResponse_init_default, response_OpResponse_init_default, response_OpResponse_init_default, response_OpResponse_init_default, response_OpResponse_init_default, response_OpResponse_init_default, response_OpResponse_init_default}}
+#define response_OpResponse_init_default         {_response_Result_MIN, ""}
+#define request_init_zero                        {"", 0, {request_Operation_init_zero, request_Operation_init_zero, request_Operation_init_zero, request_Operation_init_zero, request_Operation_init_zero, request_Operation_init_zero, request_Operation_init_zero, request_Operation_init_zero, request_Operation_init_zero, request_Operation_init_zero}}
 #define request_Ping_init_zero                   {0}
-#define request_Send_init_zero                   {{{NULL}, NULL}, {{NULL}, NULL}, 0}
-#define request_Request_init_zero                {{{NULL}, NULL}, 0}
-#define request_Operation_init_zero              {{{NULL}, NULL}, {{NULL}, NULL}, 0, {request_Ping_init_zero}}
-#define response_init_zero                       {{{NULL}, NULL}}
-#define response_Response_init_zero              {_response_Result_MIN, {{NULL}, NULL}}
+#define request_Send_init_zero                   {"", "", 0}
+#define request_Subscribe_init_zero              {"", 0}
+#define request_Operation_init_zero              {0, {request_Ping_init_zero}}
+#define response_init_zero                       {0, {response_OpResponse_init_zero, response_OpResponse_init_zero, response_OpResponse_init_zero, response_OpResponse_init_zero, response_OpResponse_init_zero, response_OpResponse_init_zero, response_OpResponse_init_zero, response_OpResponse_init_zero, response_OpResponse_init_zero, response_OpResponse_init_zero}}
+#define response_OpResponse_init_zero            {_response_Result_MIN, ""}
 
 /* Field tags (for use in manual encoding/decoding) */
-#define response_response_tag                    1
 #define request_Ping_num_tag                     1
-#define request_Request_queue_tag                1
-#define request_Request_clear_tag                2
 #define request_Send_queue_tag                   1
 #define request_Send_payload_tag                 2
 #define request_Send_persist_tag                 3
-#define response_Response_result_code_tag        1
-#define response_Response_payload_tag            2
-#define request_Operation_client_id_tag          1
-#define request_Operation_operation_tag          2
+#define request_Subscribe_queue_tag              1
+#define request_Subscribe_clear_tag              2
+#define response_OpResponse_result_code_tag      1
+#define response_OpResponse_payload_tag          2
 #define request_Operation_ping_tag               4
 #define request_Operation_send_tag               5
-#define request_Operation_request_tag            6
+#define request_Operation_qRequest_tag           6
+#define response_opResponses_tag                 1
+#define request_client_id_tag                    1
+#define request_operations_tag                   2
 
 /* Struct field encoding specification for nanopb */
 #define request_FIELDLIST(X, a) \
-
+X(a, STATIC,   SINGULAR, STRING,   client_id,         1) \
+X(a, STATIC,   REPEATED, MESSAGE,  operations,        2)
 #define request_CALLBACK NULL
 #define request_DEFAULT NULL
+#define request_operations_MSGTYPE request_Operation
 
 #define request_Ping_FIELDLIST(X, a) \
 X(a, STATIC,   SINGULAR, INT32,    num,               1)
@@ -112,68 +115,65 @@ X(a, STATIC,   SINGULAR, INT32,    num,               1)
 #define request_Ping_DEFAULT NULL
 
 #define request_Send_FIELDLIST(X, a) \
-X(a, CALLBACK, SINGULAR, STRING,   queue,             1) \
-X(a, CALLBACK, SINGULAR, STRING,   payload,           2) \
+X(a, STATIC,   SINGULAR, STRING,   queue,             1) \
+X(a, STATIC,   SINGULAR, STRING,   payload,           2) \
 X(a, STATIC,   SINGULAR, BOOL,     persist,           3)
-#define request_Send_CALLBACK pb_default_field_callback
+#define request_Send_CALLBACK NULL
 #define request_Send_DEFAULT NULL
 
-#define request_Request_FIELDLIST(X, a) \
-X(a, CALLBACK, SINGULAR, STRING,   queue,             1) \
+#define request_Subscribe_FIELDLIST(X, a) \
+X(a, STATIC,   SINGULAR, STRING,   queue,             1) \
 X(a, STATIC,   SINGULAR, BOOL,     clear,             2)
-#define request_Request_CALLBACK pb_default_field_callback
-#define request_Request_DEFAULT NULL
+#define request_Subscribe_CALLBACK NULL
+#define request_Subscribe_DEFAULT NULL
 
 #define request_Operation_FIELDLIST(X, a) \
-X(a, CALLBACK, SINGULAR, STRING,   client_id,         1) \
-X(a, CALLBACK, REPEATED, MESSAGE,  operation,         2) \
 X(a, STATIC,   ONEOF,    MESSAGE,  (op,ping,op.ping),   4) \
 X(a, STATIC,   ONEOF,    MESSAGE,  (op,send,op.send),   5) \
-X(a, STATIC,   ONEOF,    MESSAGE,  (op,request,op.request),   6)
-#define request_Operation_CALLBACK pb_default_field_callback
+X(a, STATIC,   ONEOF,    MESSAGE,  (op,qRequest,op.qRequest),   6)
+#define request_Operation_CALLBACK NULL
 #define request_Operation_DEFAULT NULL
-#define request_Operation_operation_MSGTYPE request_Operation
 #define request_Operation_op_ping_MSGTYPE request_Ping
 #define request_Operation_op_send_MSGTYPE request_Send
-#define request_Operation_op_request_MSGTYPE request_Request
+#define request_Operation_op_qRequest_MSGTYPE request_Subscribe
 
 #define response_FIELDLIST(X, a) \
-X(a, CALLBACK, REPEATED, MESSAGE,  response,          1)
-#define response_CALLBACK pb_default_field_callback
+X(a, STATIC,   REPEATED, MESSAGE,  opResponses,       1)
+#define response_CALLBACK NULL
 #define response_DEFAULT NULL
-#define response_response_MSGTYPE response_Response
+#define response_opResponses_MSGTYPE response_OpResponse
 
-#define response_Response_FIELDLIST(X, a) \
+#define response_OpResponse_FIELDLIST(X, a) \
 X(a, STATIC,   SINGULAR, UENUM,    result_code,       1) \
-X(a, CALLBACK, SINGULAR, STRING,   payload,           2)
-#define response_Response_CALLBACK pb_default_field_callback
-#define response_Response_DEFAULT NULL
+X(a, STATIC,   SINGULAR, STRING,   payload,           2)
+#define response_OpResponse_CALLBACK NULL
+#define response_OpResponse_DEFAULT NULL
 
 extern const pb_msgdesc_t request_msg;
 extern const pb_msgdesc_t request_Ping_msg;
 extern const pb_msgdesc_t request_Send_msg;
-extern const pb_msgdesc_t request_Request_msg;
+extern const pb_msgdesc_t request_Subscribe_msg;
 extern const pb_msgdesc_t request_Operation_msg;
 extern const pb_msgdesc_t response_msg;
-extern const pb_msgdesc_t response_Response_msg;
+extern const pb_msgdesc_t response_OpResponse_msg;
 
 /* Defines for backwards compatibility with code written before nanopb-0.4.0 */
 #define request_fields &request_msg
 #define request_Ping_fields &request_Ping_msg
 #define request_Send_fields &request_Send_msg
-#define request_Request_fields &request_Request_msg
+#define request_Subscribe_fields &request_Subscribe_msg
 #define request_Operation_fields &request_Operation_msg
 #define response_fields &response_msg
-#define response_Response_fields &response_Response_msg
+#define response_OpResponse_fields &response_OpResponse_msg
 
 /* Maximum encoded size of messages (where known) */
-#define request_size                             0
+#define request_size                             1501
 #define request_Ping_size                        11
-/* request_Send_size depends on runtime parameters */
-/* request_Request_size depends on runtime parameters */
-/* request_Operation_size depends on runtime parameters */
-/* response_size depends on runtime parameters */
-/* response_Response_size depends on runtime parameters */
+#define request_Send_size                        143
+#define request_Subscribe_size                   13
+#define request_Operation_size                   146
+#define response_size                            1350
+#define response_OpResponse_size                 132
 
 #ifdef __cplusplus
 } /* extern "C" */
