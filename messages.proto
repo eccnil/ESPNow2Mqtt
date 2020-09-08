@@ -1,0 +1,29 @@
+syntax = "proto3";
+
+/*
+    messages used by client and server
+
+    compile with
+    protoc -I=. --cpp_out=lib ./messages.proto
+*/
+
+message request {
+  string client_id = 1;
+  enum Command {
+      PING = 0;
+      SEND = 1;
+      SEND_AND_REQUEST = 2;
+      REQUEST = 3;
+  }
+  Command command = 2;
+  string payload = 3;
+}
+
+message response {
+    enum Result {
+        OK = 0;
+        NOK = 1;
+    } 
+    Result result_code = 1;
+    string payload = 2;
+}

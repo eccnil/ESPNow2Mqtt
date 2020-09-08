@@ -2,6 +2,9 @@
 #include <Arduino.h>
 #include "display.hpp"
 #include "criptMsg.hpp"
+#include <pb_encode.h>
+#include <pb_encode.h>
+#include "messages.pb.h"
 
 #ifdef ESP32
   #include <WiFi.h>
