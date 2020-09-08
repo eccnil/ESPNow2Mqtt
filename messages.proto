@@ -8,22 +8,40 @@ syntax = "proto3";
 */
 
 message request {
-  string client_id = 1;
-  enum Command {
-      PING = 0;
-      SEND = 1;
-      SEND_AND_REQUEST = 2;
-      REQUEST = 3;
+  message Ping {
+      int32 num = 1;
   }
-  Command command = 2;
-  string payload = 3;
+  message Send {
+      string queue = 1;
+      string payload = 2;
+      bool persist = 3;
+  }
+  message Request {
+      string queue = 1;
+      bool clear = 2;
+  }
+  message Operation {
+      oneof op {
+          Ping ping=4;
+          Send send=5;
+          Request request=6;
+      }
+  string client_id = 1;
+  repeated Operation operation = 2;
+  }
+  
 }
 
 message response {
     enum Result {
-        OK = 0;
-        NOK = 1;
+        OK = 0; //sed, ping or crecevie ok
+        NO_MSG = 1; //no message on queue
+        NOK = 5; // error
+        NOMQTT = 7; //no mqtt error
     } 
-    Result result_code = 1;
-    string payload = 2;
+    message Response{
+        Result result_code = 1;
+        string payload = 2;
+    }
+    repeated Response response =1;
 }

@@ -14,78 +14,166 @@ extern "C" {
 #endif
 
 /* Enum definitions */
-typedef enum _request_Command {
-    request_Command_PING = 0,
-    request_Command_SEND = 1,
-    request_Command_SEND_AND_REQUEST = 2,
-    request_Command_REQUEST = 3
-} request_Command;
-
 typedef enum _response_Result {
     response_Result_OK = 0,
-    response_Result_NOK = 1
+    response_Result_NO_MSG = 1,
+    response_Result_NOK = 5,
+    response_Result_NOMQTT = 7
 } response_Result;
 
 /* Struct definitions */
 typedef struct _request {
-    pb_callback_t client_id;
-    request_Command command;
-    pb_callback_t payload;
+    char dummy_field;
 } request;
 
 typedef struct _response {
+    pb_callback_t response;
+} response;
+
+typedef struct _request_Ping {
+    int32_t num;
+} request_Ping;
+
+typedef struct _request_Request {
+    pb_callback_t queue;
+    bool clear;
+} request_Request;
+
+typedef struct _request_Send {
+    pb_callback_t queue;
+    pb_callback_t payload;
+    bool persist;
+} request_Send;
+
+typedef struct _response_Response {
     response_Result result_code;
     pb_callback_t payload;
-} response;
+} response_Response;
+
+typedef struct _request_Operation {
+    pb_callback_t client_id;
+    pb_callback_t operation;
+    pb_size_t which_op;
+    union {
+        request_Ping ping;
+        request_Send send;
+        request_Request request;
+    } op;
+} request_Operation;
 
 
 /* Helper constants for enums */
-#define _request_Command_MIN request_Command_PING
-#define _request_Command_MAX request_Command_REQUEST
-#define _request_Command_ARRAYSIZE ((request_Command)(request_Command_REQUEST+1))
-
 #define _response_Result_MIN response_Result_OK
-#define _response_Result_MAX response_Result_NOK
-#define _response_Result_ARRAYSIZE ((response_Result)(response_Result_NOK+1))
+#define _response_Result_MAX response_Result_NOMQTT
+#define _response_Result_ARRAYSIZE ((response_Result)(response_Result_NOMQTT+1))
 
 
 /* Initializer values for message structs */
-#define request_init_default                     {{{NULL}, NULL}, _request_Command_MIN, {{NULL}, NULL}}
-#define response_init_default                    {_response_Result_MIN, {{NULL}, NULL}}
-#define request_init_zero                        {{{NULL}, NULL}, _request_Command_MIN, {{NULL}, NULL}}
-#define response_init_zero                       {_response_Result_MIN, {{NULL}, NULL}}
+#define request_init_default                     {0}
+#define request_Ping_init_default                {0}
+#define request_Send_init_default                {{{NULL}, NULL}, {{NULL}, NULL}, 0}
+#define request_Request_init_default             {{{NULL}, NULL}, 0}
+#define request_Operation_init_default           {{{NULL}, NULL}, {{NULL}, NULL}, 0, {request_Ping_init_default}}
+#define response_init_default                    {{{NULL}, NULL}}
+#define response_Response_init_default           {_response_Result_MIN, {{NULL}, NULL}}
+#define request_init_zero                        {0}
+#define request_Ping_init_zero                   {0}
+#define request_Send_init_zero                   {{{NULL}, NULL}, {{NULL}, NULL}, 0}
+#define request_Request_init_zero                {{{NULL}, NULL}, 0}
+#define request_Operation_init_zero              {{{NULL}, NULL}, {{NULL}, NULL}, 0, {request_Ping_init_zero}}
+#define response_init_zero                       {{{NULL}, NULL}}
+#define response_Response_init_zero              {_response_Result_MIN, {{NULL}, NULL}}
 
 /* Field tags (for use in manual encoding/decoding) */
-#define request_client_id_tag                    1
-#define request_command_tag                      2
-#define request_payload_tag                      3
-#define response_result_code_tag                 1
-#define response_payload_tag                     2
+#define response_response_tag                    1
+#define request_Ping_num_tag                     1
+#define request_Request_queue_tag                1
+#define request_Request_clear_tag                2
+#define request_Send_queue_tag                   1
+#define request_Send_payload_tag                 2
+#define request_Send_persist_tag                 3
+#define response_Response_result_code_tag        1
+#define response_Response_payload_tag            2
+#define request_Operation_client_id_tag          1
+#define request_Operation_operation_tag          2
+#define request_Operation_ping_tag               4
+#define request_Operation_send_tag               5
+#define request_Operation_request_tag            6
 
 /* Struct field encoding specification for nanopb */
 #define request_FIELDLIST(X, a) \
-X(a, CALLBACK, SINGULAR, STRING,   client_id,         1) \
-X(a, STATIC,   SINGULAR, UENUM,    command,           2) \
-X(a, CALLBACK, SINGULAR, STRING,   payload,           3)
-#define request_CALLBACK pb_default_field_callback
+
+#define request_CALLBACK NULL
 #define request_DEFAULT NULL
 
+#define request_Ping_FIELDLIST(X, a) \
+X(a, STATIC,   SINGULAR, INT32,    num,               1)
+#define request_Ping_CALLBACK NULL
+#define request_Ping_DEFAULT NULL
+
+#define request_Send_FIELDLIST(X, a) \
+X(a, CALLBACK, SINGULAR, STRING,   queue,             1) \
+X(a, CALLBACK, SINGULAR, STRING,   payload,           2) \
+X(a, STATIC,   SINGULAR, BOOL,     persist,           3)
+#define request_Send_CALLBACK pb_default_field_callback
+#define request_Send_DEFAULT NULL
+
+#define request_Request_FIELDLIST(X, a) \
+X(a, CALLBACK, SINGULAR, STRING,   queue,             1) \
+X(a, STATIC,   SINGULAR, BOOL,     clear,             2)
+#define request_Request_CALLBACK pb_default_field_callback
+#define request_Request_DEFAULT NULL
+
+#define request_Operation_FIELDLIST(X, a) \
+X(a, CALLBACK, SINGULAR, STRING,   client_id,         1) \
+X(a, CALLBACK, REPEATED, MESSAGE,  operation,         2) \
+X(a, STATIC,   ONEOF,    MESSAGE,  (op,ping,op.ping),   4) \
+X(a, STATIC,   ONEOF,    MESSAGE,  (op,send,op.send),   5) \
+X(a, STATIC,   ONEOF,    MESSAGE,  (op,request,op.request),   6)
+#define request_Operation_CALLBACK pb_default_field_callback
+#define request_Operation_DEFAULT NULL
+#define request_Operation_operation_MSGTYPE request_Operation
+#define request_Operation_op_ping_MSGTYPE request_Ping
+#define request_Operation_op_send_MSGTYPE request_Send
+#define request_Operation_op_request_MSGTYPE request_Request
+
 #define response_FIELDLIST(X, a) \
-X(a, STATIC,   SINGULAR, UENUM,    result_code,       1) \
-X(a, CALLBACK, SINGULAR, STRING,   payload,           2)
+X(a, CALLBACK, REPEATED, MESSAGE,  response,          1)
 #define response_CALLBACK pb_default_field_callback
 #define response_DEFAULT NULL
+#define response_response_MSGTYPE response_Response
+
+#define response_Response_FIELDLIST(X, a) \
+X(a, STATIC,   SINGULAR, UENUM,    result_code,       1) \
+X(a, CALLBACK, SINGULAR, STRING,   payload,           2)
+#define response_Response_CALLBACK pb_default_field_callback
+#define response_Response_DEFAULT NULL
 
 extern const pb_msgdesc_t request_msg;
+extern const pb_msgdesc_t request_Ping_msg;
+extern const pb_msgdesc_t request_Send_msg;
+extern const pb_msgdesc_t request_Request_msg;
+extern const pb_msgdesc_t request_Operation_msg;
 extern const pb_msgdesc_t response_msg;
+extern const pb_msgdesc_t response_Response_msg;
 
 /* Defines for backwards compatibility with code written before nanopb-0.4.0 */
 #define request_fields &request_msg
+#define request_Ping_fields &request_Ping_msg
+#define request_Send_fields &request_Send_msg
+#define request_Request_fields &request_Request_msg
+#define request_Operation_fields &request_Operation_msg
 #define response_fields &response_msg
+#define response_Response_fields &response_Response_msg
 
 /* Maximum encoded size of messages (where known) */
-/* request_size depends on runtime parameters */
+#define request_size                             0
+#define request_Ping_size                        11
+/* request_Send_size depends on runtime parameters */
+/* request_Request_size depends on runtime parameters */
+/* request_Operation_size depends on runtime parameters */
 /* response_size depends on runtime parameters */
+/* response_Response_size depends on runtime parameters */
 
 #ifdef __cplusplus
 } /* extern "C" */

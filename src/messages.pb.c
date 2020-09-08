@@ -9,8 +9,22 @@
 PB_BIND(request, request, AUTO)
 
 
+PB_BIND(request_Ping, request_Ping, AUTO)
+
+
+PB_BIND(request_Send, request_Send, AUTO)
+
+
+PB_BIND(request_Request, request_Request, AUTO)
+
+
+PB_BIND(request_Operation, request_Operation, AUTO)
+
+
 PB_BIND(response, response, AUTO)
 
+
+PB_BIND(response_Response, response_Response, AUTO)
 
 
 
