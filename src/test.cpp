@@ -79,33 +79,48 @@ void testProtobuffResp(){
 
 }
 
-void testProtobuffRq(){
-  int messageLength;
+inline request_Operation createRequestOperationPing (int num){
+  request_Operation result = request_Operation_init_zero;
+  result.which_op = request_Operation_ping_tag;
+  result.op.ping.num = num;
+  return result;
+}
 
-  request_Ping ping1 = request_Ping_init_zero;
-  ping1.num=66;
-  request_Operation op1 = request_Operation_init_zero;
-  op1.op.ping = ping1;
-  op1.which_op = request_Operation_ping_tag;
-  request_Send send2 = request_Send_init_zero;
-  strcpy(send2.queue,"sendq");
-  strcpy(send2.payload,"{'mytest':0}");
-  send2.persist=true;
-  request_Operation op2 = request_Operation_init_zero;
-  op2.op.send = send2;
-  op2.which_op = request_Operation_send_tag;
-  request_Subscribe subs3 = request_Subscribe_init_zero;
-  strcpy(subs3.queue,"subsq");
-  subs3.clear=false;
-  request_Operation op3 = request_Operation_init_zero;
-  op3.op.qRequest = subs3;
-  op3.which_op = request_Operation_qRequest_tag;
+inline request_Operation createRequestOperationSend ( char* payload = "", char* queue = "out", bool retain = true){
+  request_Operation result = request_Operation_init_zero;
+  result.which_op = request_Operation_send_tag;
+  strcpy(result.op.send.payload, payload);
+  strcpy(result.op.send.queue, queue);
+  result.op.send.persist = retain;
+  return result;
+}
+
+inline request_Operation createRequestOperationSubscribeQueue ( char* queue = "in", bool remove = true){
+  request_Operation result = request_Operation_init_zero;
+  result.which_op = request_Operation_qRequest_tag;
+  strcpy(result.op.qRequest.queue, queue);
+  result.op.qRequest.clear = remove;
+  return result;
+}
+
+inline request createTestRequest (){
+  request_Operation op1 = createRequestOperationPing(77);
+  request_Operation op2 = createRequestOperationSend ("{'mytest':0}");
+  request_Operation op3 = createRequestOperationSubscribeQueue();
+
   request myRq = request_init_zero;
-  strcpy(myRq.client_id,"test");
+  strcpy(myRq.client_id,"test!!");
   myRq.operations[0]=op1;
   myRq.operations[1]=op2;
   myRq.operations[2]=op3;
   myRq.operations_count=3;
+  return myRq;
+}
+
+void testProtobuffRq(){
+  int messageLength;
+
+  request myRq = createTestRequest();
 
   uint8_t buffer[200];
   pb_ostream_t myStream = pb_ostream_from_buffer(buffer, sizeof(buffer));
@@ -128,6 +143,37 @@ void testProtobuffRq(){
 
 }
 
+void testChachaProtobuf(){
+  int messageLength;
+
+  request myRq = createTestRequest();
+
+  uint8_t buffer[200];
+  pb_ostream_t myStream = pb_ostream_from_buffer(buffer, sizeof(buffer));
+  auto encodeResult = pb_encode (&myStream, request_fields, &myRq);
+  messageLength = myStream.bytes_written;
+
+  uint8_t ciphertext[messageLength];
+  crmsg.encrypt(ciphertext,buffer,messageLength);
+  uint8_t ciphertextCpy[messageLength];
+  std::copy(ciphertext, ciphertext+messageLength, ciphertextCpy);
+
+  uint8_t decripted[200];
+  crmsg.decrypt(decripted,ciphertextCpy, messageLength);
+
+
+  request decodedRq = request_init_default;
+  pb_istream_t iStream = pb_istream_from_buffer(decripted, messageLength); //testing salt resistance
+  pb_decode(&iStream, request_fields, &decodedRq);
+
+  Serial.println(decodedRq.client_id);
+  Serial.println(messageLength);
+  Serial.println(decodedRq.operations_count);
+  Serial.println(decodedRq.operations[2].op.qRequest.queue);
+
+
+}
+
 void setup() {
   display.init();
   Serial.begin(115200);
@@ -135,7 +181,8 @@ void setup() {
   displayMyMac();
   //testChacha();
   //testProtobuffResp();
-  testProtobuffRq();
+  //testProtobuffRq();
+  testChachaProtobuf();
 }
 
 void loop() {
