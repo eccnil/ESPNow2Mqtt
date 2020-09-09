@@ -118,11 +118,12 @@ void testProtobuffRq(){
   Serial.println((char*) buffer );
 
   request decodedRq = request_init_default;
-  pb_istream_t iStream = pb_istream_from_buffer(buffer, messageLength);
+  pb_istream_t iStream = pb_istream_from_buffer(buffer, messageLength+2); //testing salt resistance
   pb_decode(&iStream, request_fields, &decodedRq);
 
   Serial.println(decodedRq.client_id);
   Serial.println(decodedRq.operations_count);
+  Serial.println(decodedRq.operations[2].op.qRequest.queue);
 
 
 }
