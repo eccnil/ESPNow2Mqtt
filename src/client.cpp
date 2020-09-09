@@ -9,7 +9,8 @@
 
 Display display = Display();
 byte sharedKey[16] = {10,200,23,4,50,3,99,82,39,100,211,112,143,4,15,106};
-EspNow2MqttClient client = EspNow2MqttClient("tstCl", sharedKey, "c");
+uint8_t gatewayMac[6] = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
+EspNow2MqttClient client = EspNow2MqttClient("tstCl", sharedKey, gatewayMac, 1);
 
 void displayMyMac(){
   char macStr[22];
@@ -30,6 +31,11 @@ void testPing(){
 void setup() {
   display.init();
   displayMyMac();
+
+  // Set device as a Wi-Fi Station
+  WiFi.mode(WIFI_STA);
+  client.init();
+
 }
 
 void loop() {
