@@ -8,10 +8,10 @@
 #include "messages.pb.h"
 #include <esp_now.h>
 
-//TODO: move
-void OnDataSent(const uint8_t *mac_addr, esp_now_send_status_t status) {
-  Serial.print("\r\nLast Packet Send Status:\t");
-  Serial.println(status == ESP_NOW_SEND_SUCCESS ? "Delivery Success" : "Delivery Fail");
+void onDataSentNoOp(const uint8_t *mac_addr, esp_now_send_status_t status) {
+  //no operation
+  //Serial.print("\r\nLast Packet Send Status:\t");
+  //Serial.println(status == ESP_NOW_SEND_SUCCESS ? "Delivery Success" : "Delivery Fail");
 }
 
 class EspNow2MqttClient
@@ -24,7 +24,7 @@ private:
 public:
     EspNow2MqttClient(std::string name, byte* key, u8_t* serverMac, int channel = 0);
     ~EspNow2MqttClient();
-    void init();
+    int init();
     inline request_Operation createRequestOperationPing (int num);
     inline request_Operation createRequestOperationSend ( char* payload = "", char* queue = "out", bool retain = true);
     inline request_Operation createRequestOperationSubscribeQueue ( char* queue = "in", bool remove = true);
@@ -36,6 +36,9 @@ public:
 private:
     int serialize (u8_t * buffer, request &rq);
     void deserialize (response &rsp, u8_t * buffer, int lngt);
+    esp_now_peer_info_t peerInfo;
+public:
+    esp_now_send_cb_t onSendCB;
 };
 
 EspNow2MqttClient::EspNow2MqttClient(std::string name, byte* key, u8_t* serverMac, int channel):
@@ -44,25 +47,33 @@ EspNow2MqttClient::EspNow2MqttClient(std::string name, byte* key, u8_t* serverMa
     std::copy(key, key+crmsg.keySize, crmsg.key);
     std::copy(serverMac, serverMac + 6, this->serverMac);
     this->channel = channel;
+    this->onSendCB = onDataSentNoOp;
 }
 
 EspNow2MqttClient::~EspNow2MqttClient()
 {
 }
 
-void EspNow2MqttClient::init()
+int EspNow2MqttClient::init()
 {
-    esp_now_init();
-    esp_now_register_send_cb(OnDataSent);
+    if (esp_now_init() != ESP_OK) {
+        Serial.println("Error initializing ESP-NOW");
+        return 1;
+    }
+    esp_now_register_send_cb(onSendCB);
 
     // Register peer
-    esp_now_peer_info_t peerInfo;
     memcpy(peerInfo.peer_addr, serverMac, 6);
     peerInfo.channel = this->channel;  
     peerInfo.encrypt = false; //software chrypto
     
     // Add peer        
-    esp_now_add_peer(&peerInfo);
+    if (esp_now_add_peer(&peerInfo) != ESP_OK){
+        Serial.println("Failed to add peer");
+        return 2;
+    }
+
+    return 0;
 }
 
 inline request_Operation EspNow2MqttClient::createRequestOperationPing (int num)
@@ -107,6 +118,8 @@ bool EspNow2MqttClient::doRequests(request &rq)
     // serialize
     uint8_t serialized [200];
     int serializedLength = this->serialize(serialized, rq);
+    Serial.print("coded: ");
+    Serial.println(serializedLength);
     // encrypt
     uint8_t ciphered [serializedLength];
     crmsg.encrypt(ciphered,serialized,serializedLength);
@@ -119,7 +132,7 @@ bool EspNow2MqttClient::doRequests(request &rq)
 inline int EspNow2MqttClient::serialize (u8_t * buffer, request &rq)
 {
     pb_ostream_t myStream = pb_ostream_from_buffer(buffer, sizeof(buffer));
-    auto encodeResult = pb_encode (&myStream, response_fields, &rq);
+    auto encodeResult = pb_encode (&myStream, request_fields, &rq);
     int messageLength = myStream.bytes_written;
     return messageLength;
 }
