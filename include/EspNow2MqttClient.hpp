@@ -8,6 +8,8 @@
 #include "messages.pb.h"
 #include <esp_now.h>
 
+#define EN2MC_BUFFERSIZE 200
+
 void onDataSentNoOp(const uint8_t *mac_addr, esp_now_send_status_t status) {
   //no operation
   //Serial.print("\r\nLast Packet Send Status:\t");
@@ -116,10 +118,8 @@ void EspNow2MqttClient::doPing()
 bool EspNow2MqttClient::doRequests(request &rq)
 {
     // serialize
-    uint8_t serialized [200];
+    uint8_t serialized [EN2MC_BUFFERSIZE];
     int serializedLength = this->serialize(serialized, rq);
-    Serial.print("coded: ");
-    Serial.println(serializedLength);
     // encrypt
     uint8_t ciphered [serializedLength];
     crmsg.encrypt(ciphered,serialized,serializedLength);
@@ -131,8 +131,8 @@ bool EspNow2MqttClient::doRequests(request &rq)
 
 inline int EspNow2MqttClient::serialize (u8_t * buffer, request &rq)
 {
-    pb_ostream_t myStream = pb_ostream_from_buffer(buffer, sizeof(buffer));
-    auto encodeResult = pb_encode (&myStream, request_fields, &rq);
+    pb_ostream_t myStream = pb_ostream_from_buffer(buffer, EN2MC_BUFFERSIZE);
+    pb_encode (&myStream, request_fields, &rq);
     int messageLength = myStream.bytes_written;
     return messageLength;
 }
