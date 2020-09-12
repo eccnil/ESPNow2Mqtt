@@ -22,7 +22,7 @@ void displayMyMac(){
   char macStr[22];
   strcpy(macStr, "Mac ");
   strcat(macStr,WiFi.macAddress().c_str());
-  display.print(8, macStr);
+  display.print(7, macStr);
 }
 
 void testPing(){

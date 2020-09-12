@@ -42,7 +42,7 @@ void displayMyMac(){
     char macStr[22];
     strcpy(macStr, "Mac ");
     strcat(macStr,WiFi.macAddress().c_str());
-    display.print(8, macStr);
+    display.print(7, macStr);
 }
 
 void onEspNowRecv(const uint8_t * mac_addr, const uint8_t *incomingData, int len) {
@@ -52,7 +52,7 @@ void onEspNowRecv(const uint8_t * mac_addr, const uint8_t *incomingData, int len
             mac_addr[0], mac_addr[1], mac_addr[2], mac_addr[3], mac_addr[4], mac_addr[5], len);
     Serial.println(macStr);
     display.print(2,"---", false);
-    display.print(1,macStr, true);
+    display.print(1,macStr, false);
 
     gw.espNowHandler( mac_addr, incomingData, len);
   
