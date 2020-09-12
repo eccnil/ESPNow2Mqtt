@@ -14,6 +14,8 @@ private:
     CriptMsg crmsg = CriptMsg();
     response gwResponse = response_init_zero;
     request decodedRequest = request_init_default;
+    response emptyResponse = response_init_zero;
+    request defaultRequest = request_init_default;
 public:
     EspNow2MqttGateway(byte* key);
     ~EspNow2MqttGateway();
@@ -46,9 +48,11 @@ int EspNow2MqttGateway::init()
 void EspNow2MqttGateway::espNowHandler(const uint8_t * mac_addr, const uint8_t *incomingData, int len)
 {
     //create request object
+    decodedRequest = defaultRequest;
     deserializeRequest(decodedRequest,incomingData,len);
     
     //re-init response object
+    gwResponse = emptyResponse;
     gwResponse.opResponses_count = decodedRequest.operations_count;
 
     //call handlers
@@ -110,7 +114,7 @@ void EspNow2MqttGateway::deserializeRequest(request &rq, const uint8_t *incoming
     //deserialize
     //decodedRequest = request_init_default;
     pb_istream_t iStream = pb_istream_from_buffer(decripted, len);
-    pb_decode(&iStream, request_fields, &decodedRequest);
+    pb_decode(&iStream, request_fields, &rq);
 }
 
 
