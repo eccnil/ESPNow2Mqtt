@@ -28,7 +28,7 @@ private:
     void buildResponse (response_Result code, char * payload , response_OpResponse & rsp);
     void deserializeRequest(request &rq, const uint8_t *incomingData, int len);
 public:
-    std::function<void(request)> onReceiveCallback = NULL;
+    std::function<void(request&,response&)> onReceivePostCallback = NULL;
 };
 
 EspNow2MqttGateway::EspNow2MqttGateway(byte* key)
@@ -79,7 +79,12 @@ void EspNow2MqttGateway::espNowHandler(const uint8_t * mac_addr, const uint8_t *
         }
     }
     //TODO: send back response
-    //TODO: call callaback to debug
+
+    //call callaback to debug
+    if (onReceivePostCallback)
+    {
+        onReceivePostCallback(decodedRequest,gwResponse);
+    }
 }
 
 void EspNow2MqttGateway::pingHandler(const uint8_t * mac_addr, request_Ping & ping, response_OpResponse & rsp)

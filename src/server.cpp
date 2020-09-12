@@ -14,22 +14,28 @@ Display display = Display();
 byte sharedKey[16] = {10,200,23,4,50,3,99,82,39,100,211,112,143,4,15,106};
 EspNow2MqttGateway gw = EspNow2MqttGateway(sharedKey);
 
-void onRq(request rq){
-    display.print(1,rq.client_id);
 
-    if(rq.operations_count>0)
+void onPostRq(request &rq, response &rsp ){
+    char line[13];
+    for (char opCount = 0; opCount < rq.operations_count; opCount ++)
     {
-        if(rq.operations[0].which_op == request_Operation_ping_tag)
+        int lineNum = 3 + opCount;
+        switch (rq.operations[opCount].which_op)
         {
-            char pingN[6];
-            itoa(rq.operations[0].op.ping.num, pingN, 10);
-            display.print(3, pingN, false);
+        case request_Operation_ping_tag:
+            snprintf(line, sizeof(line), "ping: %d", rq.operations[opCount].op.ping.num );
+            break;
+        
+        default:
+            snprintf(line, sizeof(line), "unknown op");
+            break;
         }
+        display.print(lineNum,line,false);
     }
-
-    char operationsCount[2];
-    itoa(rq.operations_count, operationsCount, 10);
-    display.print(2,operationsCount, true);
+    snprintf(line, sizeof(line), "%s: %d ops",
+        rq.client_id, 
+        rq.operations_count);
+    display.print(2,line,true);
 }
 
 void displayMyMac(){
@@ -45,9 +51,8 @@ void onEspNowRecv(const uint8_t * mac_addr, const uint8_t *incomingData, int len
     snprintf(macStr, sizeof(macStr), "%02x:%02x:%02x:%02x:%02x:%02x %db",
             mac_addr[0], mac_addr[1], mac_addr[2], mac_addr[3], mac_addr[4], mac_addr[5], len);
     Serial.println(macStr);
-    display.print(1,"Packet received from: ", false);
-    display.print(2,macStr, true);
-
+    display.print(2,"---", false);
+    display.print(1,macStr, true);
 
     gw.espNowHandler( mac_addr, incomingData, len);
   
@@ -64,7 +69,7 @@ void setup() {
 
     //init gateway
     gw.init();
-    gw.onReceiveCallback = onRq;
+    gw.onReceivePostCallback = onPostRq;
 
     //init esp-now, gw will be registered as a handler for incoming messages
     if (esp_now_init() != ESP_OK) {
