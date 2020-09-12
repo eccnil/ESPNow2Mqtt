@@ -10,8 +10,9 @@
 #include <esp_now.h>
 
 
-//EspNow2MqttGateway gw = EspNow2MqttGateway(0);
 Display display = Display();
+byte sharedKey[16] = {10,200,23,4,50,3,99,82,39,100,211,112,143,4,15,106};
+EspNow2MqttGateway gw = EspNow2MqttGateway(sharedKey);
 
 void onRq(request rq){
     display.print(1,rq.client_id);
@@ -38,39 +39,38 @@ void displayMyMac(){
     display.print(8, macStr);
 }
 
-void OnDataRecv(const uint8_t * mac_addr, const uint8_t *incomingData, int len) {
-    char macStr[18];
+void onEspNowRecv(const uint8_t * mac_addr, const uint8_t *incomingData, int len) {
+    char macStr[18+1+4]; //18 mac + 1 space + 3 len
     Serial.print("Packet received from: ");
-    snprintf(macStr, sizeof(macStr), "%02x:%02x:%02x:%02x:%02x:%02x",
-            mac_addr[0], mac_addr[1], mac_addr[2], mac_addr[3], mac_addr[4], mac_addr[5]);
+    snprintf(macStr, sizeof(macStr), "%02x:%02x:%02x:%02x:%02x:%02x %db",
+            mac_addr[0], mac_addr[1], mac_addr[2], mac_addr[3], mac_addr[4], mac_addr[5], len);
     Serial.println(macStr);
     display.print(1,"Packet received from: ", false);
     display.print(2,macStr, true);
+
+
+    gw.espNowHandler( mac_addr, incomingData, len);
   
 }
 
 void setup() {
+    Serial.begin(115200);
     display.init();
     displayMyMac();
 
     //Set device as a Wi-Fi Station
+    //TODO: remove for mqtt connection
     WiFi.mode(WIFI_STA); 
 
-        //Init ESP-NOW
+    //init gateway
+    gw.init();
+    gw.onReceiveCallback = onRq;
+
+    //init esp-now, gw will be registered as a handler for incoming messages
     if (esp_now_init() != ESP_OK) {
-        display.print(3,"Error initializing ESP-NOW");
-        return;
-    } else {
-        display.print(3,"Ok initializing ESP-NOW");
+        Serial.println("Error initializing ESP-NOW");
     }
-
-    // Once ESPNow is successfully Init, we will register for recv CB to
-    // get recv packer info
-    esp_now_register_recv_cb(OnDataRecv);
-
-
-    //gw.init();
-    //gw.onReceiveCallback = onRq;
+    esp_now_register_recv_cb(onEspNowRecv);
 }
 
 void loop() {
