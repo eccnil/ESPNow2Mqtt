@@ -65,7 +65,7 @@ void setup() {
 
     //Set device as a Wi-Fi Station
     //TODO: remove for mqtt connection
-    WiFi.mode(WIFI_STA); 
+    WiFi.mode(WIFI_MODE_STA); 
 
     //init gateway
     gw.init();

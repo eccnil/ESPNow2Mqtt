@@ -7,6 +7,7 @@
 #include <pb_encode.h>
 #include "messages.pb.h"
 #include <esp_now.h>
+#include "EspNowUtil.hpp"
 
 class EspNow2MqttGateway
 {
@@ -16,8 +17,9 @@ private:
     request decodedRequest = request_init_default;
     response emptyResponse = response_init_zero;
     request defaultRequest = request_init_default;
+    EspNowUtil eNowUtil;
 public:
-    EspNow2MqttGateway(byte* key);
+    EspNow2MqttGateway(byte* key, int espnowChannel = 0);
     ~EspNow2MqttGateway();
     int init();
     void espNowHandler(const uint8_t * mac_addr, const uint8_t *incomingData, int len);
@@ -27,11 +29,13 @@ private:
     void subscribeHandler(const uint8_t * mac_addr, request_Subscribe & ping, response_OpResponse & rsp);
     void buildResponse (response_Result code, char * payload , response_OpResponse & rsp);
     void deserializeRequest(request &rq, const uint8_t *incomingData, int len);
+    int serializeResponse (u8_t * buffer, response &rsp);
 public:
     std::function<void(request&,response&)> onReceivePostCallback = NULL;
 };
 
-EspNow2MqttGateway::EspNow2MqttGateway(byte* key)
+EspNow2MqttGateway::EspNow2MqttGateway(byte* key, int espnowChannel):
+eNowUtil(espnowChannel)
 {
     std::copy(key, key+crmsg.keySize, crmsg.key);
 }
@@ -78,7 +82,11 @@ void EspNow2MqttGateway::espNowHandler(const uint8_t * mac_addr, const uint8_t *
             break;
         }
     }
-    //TODO: send back response
+    //send back response
+    u8_t outputBuffer[EN2MC_BUFFERSIZE];
+    int outputBufferLen = serializeResponse( outputBuffer, gwResponse );
+
+    eNowUtil.send(mac_addr,outputBuffer, outputBufferLen);
 
     //call callaback to debug
     if (onReceivePostCallback)
@@ -117,10 +125,23 @@ void EspNow2MqttGateway::deserializeRequest(request &rq, const uint8_t *incoming
     crmsg.decrypt(decripted, incomingData, len);
 
     //deserialize
-    //decodedRequest = request_init_default;
     pb_istream_t iStream = pb_istream_from_buffer(decripted, len);
     pb_decode(&iStream, request_fields, &rq);
 }
 
+inline int EspNow2MqttGateway::serializeResponse (u8_t * buffer, response &rsp)
+{
+    //serialize
+    u8_t serializedBuffer[EN2MC_BUFFERSIZE];
+    int bufferLen = 0;
+    pb_ostream_t myStream = pb_ostream_from_buffer(buffer, EN2MC_BUFFERSIZE);
+    pb_encode (&myStream, response_fields, &rsp);
+    int messageLength = myStream.bytes_written;
+
+    //encrypt
+    crmsg.encrypt(buffer,serializedBuffer,bufferLen);
+
+    return messageLength;
+}
 
 #endif // _ESPNOW2MQTTGATEWAY_HPP_
