@@ -7,17 +7,18 @@
 #endif
 #include <esp_now.h>
 
-long timeSent, timeSentRadio;
+long timeSent, timeSentRadio, timeack;
 Display display = Display();
 
 void displayTimeArriving()
 {
   long arrivalTime = millis();
-  char line[20];
+  char line[30];
+  long lapseSent = timeack - timeSent;
   long lapse = arrivalTime - timeSent;
   long lapseRadio = arrivalTime - timeSentRadio;
 
-  snprintf(line, sizeof(line), "time: %d, %d",lapse, lapseRadio);
+  snprintf(line, sizeof(line), "time: %d, %d, %d",lapseSent, lapse, lapseRadio);
   display.print(4,line,true);
   Serial.println(line);
 }
@@ -30,6 +31,7 @@ EspNow2MqttClient client = EspNow2MqttClient("tstCl", sharedKey, gatewayMac, 0);
 
 
 void onDataSentUpdateDisplay(const uint8_t *mac_addr, esp_now_send_status_t status) {
+  timeack = millis();
   display.print(3, status == ESP_NOW_SEND_SUCCESS ? "Delivery Success" : "Delivery Fail", false);
 }
 

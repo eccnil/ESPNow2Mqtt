@@ -14,7 +14,7 @@ Display display = Display();
 byte sharedKey[16] = {10,200,23,4,50,3,99,82,39,100,211,112,143,4,15,106};
 EspNow2MqttGateway gw = EspNow2MqttGateway(sharedKey);
 
-
+//TODO: move this to post-send-callback
 void onPostRq(request &rq, response &rsp ){
     char line[13];
     for (char opCount = 0; opCount < rq.operations_count; opCount ++)
@@ -35,7 +35,7 @@ void onPostRq(request &rq, response &rsp ){
     snprintf(line, sizeof(line), "%s: %d ops",
         rq.client_id, 
         rq.operations_count);
-    display.print(2,line,true);
+    display.print(2,line,false);
 }
 
 void displayMyMac(){
