@@ -31,11 +31,13 @@ void onPostRq(request &rq, response &rsp ){
             break;
         }
         display.print(lineNum,line,false);
+        Serial.println(line);
     }
     snprintf(line, sizeof(line), "%s: %d ops",
         rq.client_id, 
         rq.operations_count);
-    display.print(2,line,false);
+    display.print(2,line,true);
+    Serial.println(line);
 }
 
 void displayMyMac(){
@@ -59,7 +61,7 @@ void onEspNowRecv(const uint8_t * mac_addr, const uint8_t *incomingData, int len
 }
 
 void setup() {
-    //Serial.begin(115200);
+    Serial.begin(115200);
     display.init();
     displayMyMac();
 
@@ -76,6 +78,7 @@ void setup() {
         Serial.println("Error initializing ESP-NOW");
     }
     esp_now_register_recv_cb(onEspNowRecv);
+    esp_now_register_send_cb(EspNow2Mqtt_onResponseSent);
 }
 
 void loop() {

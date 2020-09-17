@@ -9,6 +9,10 @@
 #include <esp_now.h>
 #include "EspNowUtil.hpp"
 
+class EspNow2MqttGateway;
+EspNow2MqttGateway *espNow2MqttGatewaySingleton = NULL;
+void EspNow2Mqtt_onResponseSent(const uint8_t *mac_addr, esp_now_send_status_t status);
+
 class EspNow2MqttGateway
 {
 private:
@@ -30,6 +34,7 @@ private:
     void buildResponse (response_Result code, char * payload , response_OpResponse & rsp);
     void deserializeRequest(request &rq, const uint8_t *incomingData, int len);
     int serializeResponse (u8_t * buffer, response &rsp);
+    friend void EspNow2Mqtt_onResponseSent(const uint8_t *mac_addr, esp_now_send_status_t status);
 public:
     std::function<void(request&,response&)> onReceivePostCallback = NULL;
 };
@@ -38,6 +43,7 @@ EspNow2MqttGateway::EspNow2MqttGateway(byte* key, int espnowChannel):
 eNowUtil(espnowChannel)
 {
     std::copy(key, key+crmsg.keySize, crmsg.key);
+    espNow2MqttGatewaySingleton = this;
 }
 
 EspNow2MqttGateway::~EspNow2MqttGateway()
@@ -46,6 +52,8 @@ EspNow2MqttGateway::~EspNow2MqttGateway()
 
 int EspNow2MqttGateway::init()
 {
+    esp_now_register_send_cb(EspNow2Mqtt_onResponseSent);
+    Serial.println("registerok");
     return 0;
 }
 
@@ -87,12 +95,6 @@ void EspNow2MqttGateway::espNowHandler(const uint8_t * mac_addr, const uint8_t *
     int outputBufferLen = serializeResponse( outputBuffer, gwResponse );
 
     eNowUtil.send(mac_addr,outputBuffer, outputBufferLen);
-
-    //call callaback to debug
-    if (onReceivePostCallback)
-    {
-        onReceivePostCallback(decodedRequest,gwResponse);
-    }
 }
 
 void EspNow2MqttGateway::pingHandler(const uint8_t * mac_addr, request_Ping & ping, response_OpResponse & rsp)
@@ -143,5 +145,17 @@ inline int EspNow2MqttGateway::serializeResponse (u8_t * buffer, response &rsp)
 
     return messageLength;
 }
+
+void EspNow2Mqtt_onResponseSent(const uint8_t *mac_addr, esp_now_send_status_t status) {
+    Serial.println("a1");
+    if(espNow2MqttGatewaySingleton){
+        Serial.println("a2");
+        if(espNow2MqttGatewaySingleton->onReceivePostCallback){
+            Serial.println("a3");
+            espNow2MqttGatewaySingleton->onReceivePostCallback(espNow2MqttGatewaySingleton->decodedRequest, espNow2MqttGatewaySingleton->gwResponse);    
+        }
+    }
+}
+
 
 #endif // _ESPNOW2MQTTGATEWAY_HPP_
