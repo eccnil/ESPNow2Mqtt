@@ -53,6 +53,14 @@ void testPing()
   client.doPing();
 }
 
+void testSend()
+{
+  display.print(1, "send", false);
+  char pingNs[6];
+  itoa(client.pingCounter, pingNs, 10);
+  client.doSend("spnowq", pingNs, true);
+}
+
 void setup() {
   Serial.begin(115200);
   display.init();
@@ -85,5 +93,6 @@ void setup() {
 void loop() {
     timeSent = millis();
     testPing();
+    testSend();
     delay(2000);
 }
