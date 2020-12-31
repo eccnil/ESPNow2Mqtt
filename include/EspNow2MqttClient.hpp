@@ -63,6 +63,14 @@ EspNow2MqttClient::~EspNow2MqttClient()
 
 int EspNow2MqttClient::init()
 {
+    WiFi.mode(WIFI_AP_STA);
+
+    //WiFi.printDiag(Serial); 
+    esp_wifi_set_promiscuous(true);
+    esp_wifi_set_channel(this->channel, WIFI_SECOND_CHAN_NONE);
+    esp_wifi_set_promiscuous(false);
+    //WiFi.printDiag(Serial); 
+
     if (esp_now_init() != ESP_OK) {
         Serial.println("Error initializing ESP-NOW");
         return 1;
