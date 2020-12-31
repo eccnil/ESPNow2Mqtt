@@ -8,6 +8,7 @@
 #include "messages.pb.h"
 #include <esp_now.h>
 #include "EspNowUtil.hpp"
+#include <PubSubClient.h>
 
 class EspNow2MqttGateway;
 EspNow2MqttGateway *espNow2MqttGatewaySingleton = NULL;

@@ -8,6 +8,8 @@
 #include "EspNow2MqttGateway.hpp"
 #include "messages.pb.h"
 #include <esp_now.h>
+#include <WiFi.h>
+#include "secrets.h"
 
 // lcd display object creation for tests (not needed for gateway)
 Display display = Display();
@@ -19,8 +21,29 @@ Display display = Display();
 
 //shared criptokey, must be the same in all devices. create your own
 
-byte sharedKey[16] = {10,200,23,4,50,3,99,82,39,100,211,112,143,4,15,106};
-EspNow2MqttGateway gw = EspNow2MqttGateway(sharedKey);
+byte sharedKey[16] = {10,200,23,4,50,3,99,82,39,100,211,112,143,4,15,106}; 
+byte sharedChannel = 8; //avoid your wifi channel
+//gateway creation, needs initialization at setup, but after init mqtt
+EspNow2MqttGateway gw = EspNow2MqttGateway(sharedKey,sharedChannel);
+
+void setupWiFi(const char* ssid, const char* password){
+    WiFi.mode(WIFI_MODE_STA);
+    WiFi.setSleep(false);
+    WiFi.begin(ssid, password, sharedChannel); 
+    display.print(DISPLAY_LINE_WIFI,"wifiConnect ", true);
+    while (WiFi.status() != WL_CONNECTED) { // Wait for the Wi-Fi to connect
+        delay(100);
+        display.print(DISPLAY_LINE_WIFI, "trying to connect to wifi.."); 
+    }
+    display.print(DISPLAY_LINE_WIFI,"Connection established!");
+    /*
+    */
+    String ipMsg =  String("ip ");
+    ipMsg.concat( WiFi.localIP().toString());
+    ipMsg.concat( " ch ");
+    ipMsg.concat( String((int) WiFi.channel()) );
+    display.print(DISPLAY_LINE_WIFI, ipMsg.c_str());  
+}
 
 //TODO: move this to post-send-callback
 void onPostRq(request &rq, response &rsp ){
@@ -46,6 +69,11 @@ void onPostRq(request &rq, response &rsp ){
         rq.operations_count);
     display.print(DISPLAY_LINE_IN,line,true);
     Serial.println(line);
+        String ipMsg =  String("ip ");
+    ipMsg.concat( WiFi.localIP().toString());
+    ipMsg.concat( " ch ");
+    ipMsg.concat( String((int) WiFi.channel()) );
+    display.print(DISPLAY_LINE_WIFI, ipMsg.c_str()); 
 }
 
 void displayMyMac(){
@@ -73,9 +101,7 @@ void setup() {
     display.init();
     displayMyMac();
 
-    //Set device as a Wi-Fi Station
-    //TODO: remove for mqtt connection
-    WiFi.mode(WIFI_MODE_STA); 
+    setupWiFi(WIFI_SSID, WIFI_PASSWORD);
 
     //init gateway
     gw.init();
