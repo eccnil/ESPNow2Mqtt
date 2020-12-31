@@ -9,8 +9,16 @@
 #include "messages.pb.h"
 #include <esp_now.h>
 
-
+// lcd display object creation for tests (not needed for gateway)
 Display display = Display();
+#define DISPLAY_LINE_IN_MAC 1
+#define DISPLAY_LINE_IN 2
+#define DISPLAY_LINE_OPERATIONS 3
+#define DISPLAY_LINE_WIFI 6
+#define DISPLAY_LINE_MAC 7
+
+//shared criptokey, must be the same in all devices. create your own
+
 byte sharedKey[16] = {10,200,23,4,50,3,99,82,39,100,211,112,143,4,15,106};
 EspNow2MqttGateway gw = EspNow2MqttGateway(sharedKey);
 
@@ -19,7 +27,7 @@ void onPostRq(request &rq, response &rsp ){
     char line[13];
     for (char opCount = 0; opCount < rq.operations_count; opCount ++)
     {
-        int lineNum = 3 + opCount;
+        int lineNum = DISPLAY_LINE_OPERATIONS + opCount;
         switch (rq.operations[opCount].which_op)
         {
         case request_Operation_ping_tag:
@@ -36,7 +44,7 @@ void onPostRq(request &rq, response &rsp ){
     snprintf(line, sizeof(line), "%s: %d ops",
         rq.client_id, 
         rq.operations_count);
-    display.print(2,line,true);
+    display.print(DISPLAY_LINE_IN,line,true);
     Serial.println(line);
 }
 
@@ -44,7 +52,7 @@ void displayMyMac(){
     char macStr[22];
     strcpy(macStr, "Mac ");
     strcat(macStr,WiFi.macAddress().c_str());
-    display.print(7, macStr);
+    display.print(DISPLAY_LINE_MAC, macStr);
 }
 
 void onEspNowRecv(const uint8_t * mac_addr, const uint8_t *incomingData, int len) {
@@ -53,8 +61,8 @@ void onEspNowRecv(const uint8_t * mac_addr, const uint8_t *incomingData, int len
     snprintf(macStr, sizeof(macStr), "%02x:%02x:%02x:%02x:%02x:%02x %db",
             mac_addr[0], mac_addr[1], mac_addr[2], mac_addr[3], mac_addr[4], mac_addr[5], len);
     Serial.println(macStr);
-    display.print(2,"---", false);
-    display.print(1,macStr, false);
+    display.print(DISPLAY_LINE_IN,"---", false);
+    display.print(DISPLAY_LINE_IN_MAC,macStr, false);
 
     gw.espNowHandler( mac_addr, incomingData, len);
   
