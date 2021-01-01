@@ -108,7 +108,7 @@ void setup() {
 
 void loop() {
     timeSent = millis();
-    testPing();
-    //testSend();
+    //testPing();
+    testSend();
     delay(2000);
 }
