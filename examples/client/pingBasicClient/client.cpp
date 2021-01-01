@@ -8,29 +8,30 @@
 #include "EspNow2MqttClient.hpp"
 
 byte sharedKey[16] = {10,200,23,4,50,3,99,82,39,100,211,112,143,4,15,106};
-byte sharedChannel = 0 ;
+byte sharedChannel = 8 ;
 uint8_t gatewayMac[6] = {0xA4, 0xCF, 0x12, 0x25, 0x9A, 0x30};
-EspNow2MqttClient *client = EspNow2MqttClient::CreateInstance("pingCl", sharedKey, gatewayMac, sharedChannel);
+EspNow2MqttClient client = EspNow2MqttClient("pingCl", sharedKey, gatewayMac, sharedChannel);
 
 /* optional function called when the ping comes back to client */
 void onResponseArrivalPrintIt() {
   Serial.println("pong!");
 }
+
 /* optional function called when the data reaches the server (gateway) */
 void onDataSentPrintIt(bool success) {
-  Serial.println( success == ESP_NOW_SEND_SUCCESS ? "Delivery Success" : "Delivery Fail");
+  Serial.println( success ? "Delivery Success" : "Delivery Fail");
 }
 
 void setup() {
   Serial.begin(115200);
 
-  client->onSentACK = onDataSentPrintIt;
-  client->onReceiveSomething = onResponseArrivalPrintIt;
+  client.onSentACK = onDataSentPrintIt;
+  client.onReceiveSomething = onResponseArrivalPrintIt;
 
   int initcode;
   do {
     Serial.println("TRYING TO CONNECT");
-    initcode = client->init();
+    initcode = client.init();
     switch (initcode)
     {
     case 1:
@@ -50,6 +51,6 @@ void setup() {
 
 void loop() {
     Serial.println("Ping sent");
-    client->doPing();
+    client.doPing();
     delay(5000);
 }

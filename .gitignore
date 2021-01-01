@@ -5,3 +5,4 @@
 .vscode/ipch
 nanopb*
 .vscode/settings.json
+include/secrets copy.h
