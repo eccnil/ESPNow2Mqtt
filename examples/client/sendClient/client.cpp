@@ -1,3 +1,5 @@
+/* example with LCD screen that sends single mesages*/
+
 #include <Arduino.h>
 #include "display.hpp"
 #ifdef ESP32
@@ -5,10 +7,11 @@
 #else
   #include <ESP8266WiFi.h>
 #endif
-#include <esp_now.h>
 #include <esp_wifi.h>
 
-long timeSent, timeSentRadio, timeack, timePreSetup, timePostSetup;
+
+
+long timeSent, timeack, timePreSetup, timePostSetup;
 Display display = Display();
 
 void displayTimeArriving()
@@ -17,10 +20,9 @@ void displayTimeArriving()
   char line[30];
   long lapseSent = timeack - timeSent;
   long lapse = arrivalTime - timeSent;
-  long lapseRadio = arrivalTime - timeSentRadio;
   long lapseRadioSetup = timePostSetup - timePreSetup;
 
-  snprintf(line, sizeof(line), "time %d+ %d, %d, %d", lapseRadioSetup, lapseSent, lapse, lapseRadio);
+  snprintf(line, sizeof(line), "time %d+ %d, %d", lapseRadioSetup, lapseSent, lapse);
   display.print(4,line,true);
   Serial.println(line);
 }
@@ -30,12 +32,11 @@ void displayTimeArriving()
 byte sharedKey[16] = {10,200,23,4,50,3,99,82,39,100,211,112,143,4,15,106};
 byte sharedChannel = 8 ;
 uint8_t gatewayMac[6] = {0xA4, 0xCF, 0x12, 0x25, 0x9A, 0x30};
-EspNow2MqttClient client = EspNow2MqttClient("tstCl", sharedKey, gatewayMac, sharedChannel);
+EspNow2MqttClient *client = EspNow2MqttClient::CreateInstance("tstCl", sharedKey, gatewayMac, sharedChannel);
 
-
-void onDataSentUpdateDisplay(const uint8_t *mac_addr, esp_now_send_status_t status) {
+void onDataSentUpdateDisplay(bool success) {
   timeack = millis();
-  display.print(3, status == ESP_NOW_SEND_SUCCESS ? "Delivery Success" : "Delivery Fail", false);
+  display.print(3, success ? "Delivery Success" : "Delivery Fail", false);
 }
 
 void displayMyMac()
@@ -62,17 +63,17 @@ void testPing()
   char pingNs[6];
 
   display.print(1, "ping", false);
-  itoa(client.pingCounter, pingNs, 10);
+  itoa(client->pingCounter, pingNs, 10);
   display.print(2, pingNs, false);
-  client.doPing();
+  client->doPing();
 }
 
 void testSend()
 {
   display.print(1, "send", false);
   char pingNs[6];
-  itoa(client.pingCounter, pingNs, 10);
-  client.doSend("spnowq", pingNs, true);
+  itoa(client->pingCounter, pingNs, 10);
+  client->doSend("spnowq", pingNs, true);
 }
 
 void setup() {
@@ -80,13 +81,11 @@ void setup() {
   display.init();
   displayMyMac();
 
-
-  client.onSendCB = onDataSentUpdateDisplay;
   int initcode;
   do {
     display.print(5,"             TRYING");
     timePreSetup = millis();
-    initcode = client.init();
+    initcode = client->init();
     timePostSetup = millis();
     switch (initcode)
     {
@@ -103,6 +102,8 @@ void setup() {
     delay(1001);
   } while (initcode != 0);
 
+  client->onSentACK = onDataSentUpdateDisplay;
+  client->onReceiveSomething = displayTimeArriving;
 }
 
 void loop() {

@@ -7,30 +7,28 @@
 #include <pb_encode.h>
 #include "messages.pb.h"
 #include <esp_now.h>
+#include <esp_wifi.h>
 
 #define EN2MC_BUFFERSIZE 200
 
-void onDataSentNoOp(const uint8_t *mac_addr, esp_now_send_status_t status) {
-  //no operation
-  //Serial.print("\r\nLast Packet Send Status:\t");
-  //Serial.println(status == ESP_NOW_SEND_SUCCESS ? "Delivery Success" : "Delivery Fail");
-}
-auto onDataResponseLambdaNop =[] () {displayTimeArriving();Serial.print("data recived!");};
-auto onDataResponseLambda = &onDataResponseLambdaNop; 
-void onDataResponseNoOP(const uint8_t * mac_addr, const uint8_t *incomingData, int len){
-    (*onDataResponseLambda)();
-}
-
+// -- definition of class -------------------------------------------------------------------------
 class EspNow2MqttClient
 {
 private:
+    static EspNow2MqttClient* singletonInstance;
     std::string name;
     uint8_t serverMac[6] ;
     CriptMsg crmsg = CriptMsg();
     int channel;
-public:
+protected:
     EspNow2MqttClient(std::string name, byte* key, u8_t* serverMac, int channel = 0);
     ~EspNow2MqttClient();
+public:
+    //singleton methods
+    EspNow2MqttClient(EspNow2MqttClient & other) = delete; //singletons should not be cloneable
+    void operator=(const EspNow2MqttClient &) = delete; //singletons should nob be asignable
+    static EspNow2MqttClient* GetInstance() {return singletonInstance;}
+    static EspNow2MqttClient* CreateInstance(std::string name, byte* key, u8_t* serverMac, int channel = 0);
     int init();
     inline request_Operation createRequestOperationPing (int num);
     inline request_Operation createRequestOperationSend ( char* payload = "", char* queue = "out", bool retain = true);
@@ -45,8 +43,28 @@ private:
     void deserialize (response &rsp, u8_t * buffer, int lngt);
     esp_now_peer_info_t peerInfo;
 public:
-    esp_now_send_cb_t onSendCB;
+    std::function<void(bool success)> onSentACK = NULL;
+    std::function<void()> onReceiveSomething = NULL;
 };
+
+EspNow2MqttClient* EspNow2MqttClient::singletonInstance = nullptr;;
+
+// -- callbacks of espNOW -------------------------------------------------------------------------
+void onEspNowRecv(const uint8_t * mac_addr, const uint8_t *incomingData, int len) {
+    EspNow2MqttClient *instance = EspNow2MqttClient::GetInstance();
+    if (instance && instance -> onReceiveSomething){
+        instance -> onReceiveSomething();
+    }
+}
+
+void EspNow2Mqtt_onSentRecipe(const uint8_t *mac_addr, esp_now_send_status_t status) {
+    EspNow2MqttClient *instance = EspNow2MqttClient::GetInstance();
+    if (instance && instance->onSentACK){
+        instance->onSentACK(status == ESP_OK);
+    }
+}
+
+// -- class implementation ------------------------------------------------------------------------
 
 EspNow2MqttClient::EspNow2MqttClient(std::string name, byte* key, u8_t* serverMac, int channel):
     name(name)
@@ -54,12 +72,22 @@ EspNow2MqttClient::EspNow2MqttClient(std::string name, byte* key, u8_t* serverMa
     std::copy(key, key+crmsg.keySize, crmsg.key);
     std::copy(serverMac, serverMac + 6, this->serverMac);
     this->channel = channel;
-    this->onSendCB = onDataSentNoOp;
 }
 
 EspNow2MqttClient::~EspNow2MqttClient()
 {
 }
+
+EspNow2MqttClient* EspNow2MqttClient::CreateInstance(std::string name, byte* key, u8_t* serverMac, int channel) 
+{
+    if (singletonInstance)
+    {
+        free (singletonInstance);
+    } 
+    singletonInstance =  new EspNow2MqttClient(name, key, serverMac, channel); 
+    return singletonInstance;
+}
+
 
 int EspNow2MqttClient::init()
 {
@@ -75,13 +103,15 @@ int EspNow2MqttClient::init()
         Serial.println("Error initializing ESP-NOW");
         return 1;
     }
-    esp_now_register_send_cb(onSendCB);
-    esp_now_register_recv_cb(onDataResponseNoOP);
-
+    //register callbacks
+    //esp_now_register_recv_cb(onEspNowRecv);
+    //esp_now_register_send_cb(EspNow2Mqtt_onSentRecipe);
+    /*FIXME:*/ Serial.print(" ---- here");Serial.print("");Serial.println();
     // Register peer
     memcpy(peerInfo.peer_addr, serverMac, 6);
     peerInfo.channel = this->channel;  
     peerInfo.encrypt = false; //software chrypto
+    /*FIXME:*/ Serial.print(" ---- channel ");Serial.print(this->channel);Serial.println();
     
     // Add peer        
     if (esp_now_add_peer(&peerInfo) != ESP_OK){
@@ -149,7 +179,6 @@ bool EspNow2MqttClient::doRequests(request &rq)
     uint8_t ciphered [serializedLength];
     crmsg.encrypt(ciphered,serialized,serializedLength);
     // send ciphered
-    timeSentRadio = millis();
     esp_err_t result = esp_now_send(serverMac, ciphered, serializedLength);
     // result
     return result == ESP_OK;
