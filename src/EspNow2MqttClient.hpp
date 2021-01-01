@@ -25,6 +25,8 @@ public:
     ~EspNow2MqttClient();
     static EspNow2MqttClient* GetInstance() {return singletonInstance;}
     int init();
+    inline request createRequest (); 
+    inline request addOperationToRequest( request req, request_Operation operation);
     inline request_Operation createRequestOperationPing (int num);
     inline request_Operation createRequestOperationSend ( char* payload = "", char* queue = "out", bool retain = true);
     inline request_Operation createRequestOperationSubscribeQueue ( char* queue = "in", bool remove = true);
@@ -117,6 +119,20 @@ inline request_Operation EspNow2MqttClient::createRequestOperationPing (int num)
     return result;
 }
 
+inline request EspNow2MqttClient::createRequest (  ) {
+    request requests = request_init_zero;
+    strcpy (requests.client_id, this->name.c_str());
+    requests.operations_count = 0;
+    return requests;
+}
+
+inline request EspNow2MqttClient::addOperationToRequest( request req, request_Operation operation){
+    req.operations[req.operations_count] = operation;
+    req.operations_count ++;
+    return req;
+}
+
+
 inline request_Operation EspNow2MqttClient::createRequestOperationSend ( char* payload , char* queue , bool retain )
 {
     request_Operation result = request_Operation_init_zero;
@@ -139,10 +155,7 @@ inline request_Operation EspNow2MqttClient::createRequestOperationSubscribeQueue
 void EspNow2MqttClient::doPing()
 {
     request_Operation pingOp = createRequestOperationPing (pingCounter ++ );
-    request requests = request_init_zero;
-    strcpy (requests.client_id, this->name.c_str());
-    requests.operations[0] = pingOp;
-    requests.operations_count = 1;
+    request requests = addOperationToRequest(createRequest(), pingOp);
     this->doRequests(requests);
 }
 
@@ -150,10 +163,7 @@ void EspNow2MqttClient::doPing()
 bool EspNow2MqttClient::doSend(char* payload, char* queue, bool retain)
 {
     request_Operation sendOp = createRequestOperationSend(payload, queue, retain);
-    request requests = request_init_zero;
-    strcpy (requests.client_id, this->name.c_str());
-    requests.operations[0] = sendOp;
-    requests.operations_count = 1;
+    request requests = addOperationToRequest(createRequest(), sendOp);
     return this->doRequests(requests);
 }
 
