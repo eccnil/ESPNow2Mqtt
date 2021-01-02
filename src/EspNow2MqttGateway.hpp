@@ -11,7 +11,8 @@
 #include <PubSubClient.h>
 
 void EspNow2Mqtt_onResponseSent(const uint8_t *mac_addr, esp_now_send_status_t status);
-
+void EspNow2Mqtt_onDataReceived(const uint8_t * mac_addr, const uint8_t *incomingData, int len);
+// -- class definition ----------------------------------------------------------------------------
 class EspNow2MqttGateway
 {
 private:
@@ -36,12 +37,32 @@ private:
     void deserializeRequest(request &rq, const uint8_t *incomingData, int len);
     int serializeResponse (u8_t * buffer, response &rsp);
     friend void EspNow2Mqtt_onResponseSent(const uint8_t *mac_addr, esp_now_send_status_t status);
+    friend void EspNow2Mqtt_onDataReceived(const uint8_t * mac_addr, const uint8_t *incomingData, int len);
 public:
     std::function<void(bool ack, request&, response&)> onProcessedRequest = NULL;
+    std::function<void(const uint8_t * mac_addr, const uint8_t *incomingData, int len)> onDataReceived = NULL;
 };
 EspNow2MqttGateway* EspNow2MqttGateway::espNow2MqttGatewaySingleton = nullptr;;
 
+// -- friend functions ----------------------------------------------------------------------------
+void EspNow2Mqtt_onDataReceived(const uint8_t * mac_addr, const uint8_t *incomingData, int len){
+    EspNow2MqttGateway* instance = EspNow2MqttGateway::getSingleton();
+    if (instance){
+        if (instance->onDataReceived){
+            instance->onDataReceived(mac_addr,incomingData, len);
+        }
+        instance->espNowHandler( mac_addr, incomingData, len);
+    }
+}
 
+void EspNow2Mqtt_onResponseSent(const uint8_t *mac_addr, esp_now_send_status_t status) {
+    EspNow2MqttGateway * instance = EspNow2MqttGateway::getSingleton();
+    if(instance && instance->onProcessedRequest) {
+        instance->onProcessedRequest(status == ESP_OK, instance->decodedRequest, instance->gwResponse);    
+    }
+}
+
+// -- class implementation ------------------------------------------------------------------------
 EspNow2MqttGateway::EspNow2MqttGateway(byte* key, int espnowChannel):
 eNowUtil(espnowChannel)
 {
@@ -56,6 +77,7 @@ EspNow2MqttGateway::~EspNow2MqttGateway()
 int EspNow2MqttGateway::init()
 {
     esp_now_register_send_cb(EspNow2Mqtt_onResponseSent);
+
     Serial.println("registration ok");
     //init esp-now, gw will be registered as a handler for incoming messages
     if (esp_now_init() != ESP_OK) {
@@ -151,13 +173,6 @@ inline int EspNow2MqttGateway::serializeResponse (u8_t * buffer, response &rsp)
     crmsg.encrypt(buffer,serializedBuffer,bufferLen);
 
     return messageLength;
-}
-
-void EspNow2Mqtt_onResponseSent(const uint8_t *mac_addr, esp_now_send_status_t status) {
-    EspNow2MqttGateway * instance = EspNow2MqttGateway::getSingleton();
-    if(instance && instance->onProcessedRequest) {
-        instance->onProcessedRequest(status == ESP_OK, instance->decodedRequest, instance->gwResponse);    
-    }
 }
 
 

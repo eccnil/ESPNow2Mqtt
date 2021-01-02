@@ -94,8 +94,6 @@ void onEspNowRecv(const uint8_t * mac_addr, const uint8_t *incomingData, int len
     Serial.println(macStr);
     display.print(DISPLAY_LINE_IN,"---", false);
     display.print(DISPLAY_LINE_IN_MAC,macStr, false);
-
-    gw.espNowHandler( mac_addr, incomingData, len);
 }
 
 void setup() {
@@ -108,8 +106,9 @@ void setup() {
     //init gateway
     gw.init();
     gw.onProcessedRequest = displayRequestAndResponse;
+    gw.onDataReceived = onEspNowRecv;
 
-    esp_now_register_recv_cb(onEspNowRecv);
+    esp_now_register_recv_cb(EspNow2Mqtt_onDataReceived);
     esp_now_register_send_cb(EspNow2Mqtt_onResponseSent);
 }
 
