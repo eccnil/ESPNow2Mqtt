@@ -62,6 +62,11 @@ void EspNow2Mqtt_onResponseSent(const uint8_t *mac_addr, esp_now_send_status_t s
     }
 }
 
+void EspNow2Mqtt_subscribe(){
+    esp_now_register_recv_cb(EspNow2Mqtt_onDataReceived);
+    esp_now_register_send_cb(EspNow2Mqtt_onResponseSent);
+}
+
 // -- class implementation ------------------------------------------------------------------------
 EspNow2MqttGateway::EspNow2MqttGateway(byte* key, int espnowChannel):
 eNowUtil(espnowChannel)
@@ -76,8 +81,6 @@ EspNow2MqttGateway::~EspNow2MqttGateway()
 
 int EspNow2MqttGateway::init()
 {
-    esp_now_register_send_cb(EspNow2Mqtt_onResponseSent);
-
     Serial.println("registration ok");
     //init esp-now, gw will be registered as a handler for incoming messages
     if (esp_now_init() != ESP_OK) {

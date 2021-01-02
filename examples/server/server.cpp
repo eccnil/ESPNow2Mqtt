@@ -107,9 +107,8 @@ void setup() {
     gw.init();
     gw.onProcessedRequest = displayRequestAndResponse;
     gw.onDataReceived = onEspNowRecv;
+    EspNow2Mqtt_subscribe(); //FIXME: porque se tiene que llamar a esta función desde aqui??
 
-    esp_now_register_recv_cb(EspNow2Mqtt_onDataReceived);
-    esp_now_register_send_cb(EspNow2Mqtt_onResponseSent);
 }
 
 void loop() {
