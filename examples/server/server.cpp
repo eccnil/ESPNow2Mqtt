@@ -46,7 +46,7 @@ void setupWiFi(const char* ssid, const char* password){
 
 void displayRequestAndResponse(bool ack, request &rq, response &rsp ){
     char line[13];
-    for (char opCount = 0; opCount < rq.operations_count; opCount ++)
+    for (int opCount = 0; opCount < rq.operations_count; opCount ++)
     {
         int lineNum = DISPLAY_LINE_OPERATIONS + opCount;
         switch (rq.operations[opCount].which_op)
@@ -54,7 +54,12 @@ void displayRequestAndResponse(bool ack, request &rq, response &rsp ){
         case request_Operation_ping_tag:
             snprintf(line, sizeof(line), "ping: %d", rq.operations[opCount].op.ping.num );
             break;
-        
+        case request_Operation_send_tag:
+            snprintf(line, sizeof(line), "send: %s", rq.operations[opCount].op.send.queue );
+            break;
+        case request_Operation_qRequest_tag:
+            snprintf(line, sizeof(line), "ask: %s", rq.operations[opCount].op.qRequest.queue );
+            break;
         default:
             snprintf(line, sizeof(line), "unknown op");
             break;

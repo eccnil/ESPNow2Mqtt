@@ -73,7 +73,7 @@ void testSend()
   display.print(1, "send", false);
   char pingNs[6];
   itoa(client.pingCounter, pingNs, 10);
-  client.doSend("spnowq", pingNs, true);
+  client.doSend(pingNs, "spnowq", true);
 }
 
 void setup() {
