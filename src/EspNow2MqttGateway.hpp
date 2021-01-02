@@ -37,7 +37,7 @@ private:
     int serializeResponse (u8_t * buffer, response &rsp);
     friend void EspNow2Mqtt_onResponseSent(const uint8_t *mac_addr, esp_now_send_status_t status);
 public:
-    std::function<void(bool ack, request&, response&)> onReceivePostCallback = NULL;
+    std::function<void(bool ack, request&, response&)> onProcessedRequest = NULL;
 };
 EspNow2MqttGateway* EspNow2MqttGateway::espNow2MqttGatewaySingleton = nullptr;;
 
@@ -155,8 +155,8 @@ inline int EspNow2MqttGateway::serializeResponse (u8_t * buffer, response &rsp)
 
 void EspNow2Mqtt_onResponseSent(const uint8_t *mac_addr, esp_now_send_status_t status) {
     EspNow2MqttGateway * instance = EspNow2MqttGateway::getSingleton();
-    if(instance && instance->onReceivePostCallback) {
-        instance->onReceivePostCallback(status == ESP_OK, instance->decodedRequest, instance->gwResponse);    
+    if(instance && instance->onProcessedRequest) {
+        instance->onProcessedRequest(status == ESP_OK, instance->decodedRequest, instance->gwResponse);    
     }
 }
 

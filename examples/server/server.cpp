@@ -107,7 +107,7 @@ void setup() {
 
     //init gateway
     gw.init();
-    gw.onReceivePostCallback = displayRequestAndResponse;
+    gw.onProcessedRequest = displayRequestAndResponse;
 
     esp_now_register_recv_cb(onEspNowRecv);
     esp_now_register_send_cb(EspNow2Mqtt_onResponseSent);
