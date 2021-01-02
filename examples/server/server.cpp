@@ -7,7 +7,6 @@
 #include "display.hpp"
 #include "EspNow2MqttGateway.hpp"
 #include "messages.pb.h"
-#include <esp_now.h>
 #include <WiFi.h>
 #include "secrets.h"
 
@@ -45,8 +44,7 @@ void setupWiFi(const char* ssid, const char* password){
     display.print(DISPLAY_LINE_WIFI, ipMsg.c_str());  
 }
 
-//TODO: move this to post-send-callback
-void onPostRq(request &rq, response &rsp ){
+void displayRequestAndResponse(bool ack, request &rq, response &rsp ){
     char line[13];
     for (char opCount = 0; opCount < rq.operations_count; opCount ++)
     {
@@ -93,7 +91,6 @@ void onEspNowRecv(const uint8_t * mac_addr, const uint8_t *incomingData, int len
     display.print(DISPLAY_LINE_IN_MAC,macStr, false);
 
     gw.espNowHandler( mac_addr, incomingData, len);
-  
 }
 
 void setup() {
@@ -105,7 +102,7 @@ void setup() {
 
     //init gateway
     gw.init();
-    gw.onReceivePostCallback = onPostRq;
+    gw.onReceivePostCallback = displayRequestAndResponse;
 
     //init esp-now, gw will be registered as a handler for incoming messages
     if (esp_now_init() != ESP_OK) {

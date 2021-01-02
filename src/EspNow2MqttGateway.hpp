@@ -10,13 +10,12 @@
 #include "EspNowUtil.hpp"
 #include <PubSubClient.h>
 
-class EspNow2MqttGateway;
-EspNow2MqttGateway *espNow2MqttGatewaySingleton = NULL;
 void EspNow2Mqtt_onResponseSent(const uint8_t *mac_addr, esp_now_send_status_t status);
 
 class EspNow2MqttGateway
 {
 private:
+    static EspNow2MqttGateway *espNow2MqttGatewaySingleton;
     CriptMsg crmsg = CriptMsg();
     response gwResponse = response_init_zero;
     request decodedRequest = request_init_default;
@@ -27,6 +26,7 @@ public:
     EspNow2MqttGateway(byte* key, int espnowChannel = 0);
     ~EspNow2MqttGateway();
     int init();
+    static EspNow2MqttGateway* getSingleton() {return espNow2MqttGatewaySingleton;}
     void espNowHandler(const uint8_t * mac_addr, const uint8_t *incomingData, int len);
 private:
     void pingHandler(const uint8_t * mac_addr, request_Ping & ping, response_OpResponse & rsp);
@@ -37,8 +37,10 @@ private:
     int serializeResponse (u8_t * buffer, response &rsp);
     friend void EspNow2Mqtt_onResponseSent(const uint8_t *mac_addr, esp_now_send_status_t status);
 public:
-    std::function<void(request&,response&)> onReceivePostCallback = NULL;
+    std::function<void(bool ack, request&, response&)> onReceivePostCallback = NULL;
 };
+EspNow2MqttGateway* EspNow2MqttGateway::espNow2MqttGatewaySingleton = nullptr;;
+
 
 EspNow2MqttGateway::EspNow2MqttGateway(byte* key, int espnowChannel):
 eNowUtil(espnowChannel)
@@ -148,13 +150,9 @@ inline int EspNow2MqttGateway::serializeResponse (u8_t * buffer, response &rsp)
 }
 
 void EspNow2Mqtt_onResponseSent(const uint8_t *mac_addr, esp_now_send_status_t status) {
-    Serial.println("a1");
-    if(espNow2MqttGatewaySingleton){
-        Serial.println("a2");
-        if(espNow2MqttGatewaySingleton->onReceivePostCallback){
-            Serial.println("a3");
-            espNow2MqttGatewaySingleton->onReceivePostCallback(espNow2MqttGatewaySingleton->decodedRequest, espNow2MqttGatewaySingleton->gwResponse);    
-        }
+    EspNow2MqttGateway * instance = EspNow2MqttGateway::getSingleton();
+    if(instance && instance->onReceivePostCallback) {
+        instance->onReceivePostCallback(status == ESP_OK, instance->decodedRequest, instance->gwResponse);    
     }
 }
 
