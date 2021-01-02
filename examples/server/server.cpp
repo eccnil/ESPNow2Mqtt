@@ -109,10 +109,6 @@ void setup() {
     gw.init();
     gw.onReceivePostCallback = displayRequestAndResponse;
 
-    //init esp-now, gw will be registered as a handler for incoming messages
-    if (esp_now_init() != ESP_OK) {
-        Serial.println("Error initializing ESP-NOW");
-    }
     esp_now_register_recv_cb(onEspNowRecv);
     esp_now_register_send_cb(EspNow2Mqtt_onResponseSent);
 }

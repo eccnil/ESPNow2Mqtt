@@ -56,7 +56,11 @@ EspNow2MqttGateway::~EspNow2MqttGateway()
 int EspNow2MqttGateway::init()
 {
     esp_now_register_send_cb(EspNow2Mqtt_onResponseSent);
-    Serial.println("registerok");
+    Serial.println("registration ok");
+    //init esp-now, gw will be registered as a handler for incoming messages
+    if (esp_now_init() != ESP_OK) {
+        Serial.println("Error initializing ESP-NOW");
+    }
     return 0;
 }
 
