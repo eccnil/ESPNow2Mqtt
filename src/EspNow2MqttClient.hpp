@@ -11,6 +11,8 @@
 
 #define EN2MC_BUFFERSIZE 200
 
+void onEspNowRecv(const uint8_t * mac_addr, const uint8_t *incomingData, int len);
+
 // -- definition of class -------------------------------------------------------------------------
 class EspNow2MqttClient
 {
@@ -37,11 +39,12 @@ public:
     int pingCounter = 0;
 private:
     int serialize (u8_t * buffer, request &rq);
-    void deserialize (response &rsp, u8_t * buffer, int lngt);
+    void deserialize (response &rsp, const u8_t * buffer, int lngt);
     esp_now_peer_info_t peerInfo;
+    friend void onEspNowRecv(const uint8_t * mac_addr, const uint8_t *incomingData, int len);
 public:
     std::function<void(bool success)> onSentACK = NULL;
-    std::function<void()> onReceiveSomething = NULL;
+    std::function<void(response &responses)> onReceiveSomething = NULL;
 };
 
 EspNow2MqttClient* EspNow2MqttClient::singletonInstance = nullptr;;
@@ -50,7 +53,9 @@ EspNow2MqttClient* EspNow2MqttClient::singletonInstance = nullptr;;
 void onEspNowRecv(const uint8_t * mac_addr, const uint8_t *incomingData, int len) {
     EspNow2MqttClient *instance = EspNow2MqttClient::GetInstance();
     if (instance && instance -> onReceiveSomething){
-        instance -> onReceiveSomething();
+        response reponses = response_init_default;
+        //instance -> deserialize(reponses, incomingData, len);
+        instance -> onReceiveSomething(reponses);
     }
 }
 
@@ -189,7 +194,7 @@ inline int EspNow2MqttClient::serialize (u8_t * buffer, request &rq)
     return messageLength;
 }
 
-inline void EspNow2MqttClient::deserialize (response &rsp, u8_t * buffer, int lngt)
+inline void EspNow2MqttClient::deserialize (response &rsp, const u8_t * buffer, int lngt)
 {
     uint8_t deciphered[lngt];
     crmsg.decrypt(deciphered,buffer,lngt);

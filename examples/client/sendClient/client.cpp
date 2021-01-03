@@ -8,13 +8,14 @@
   #include <ESP8266WiFi.h>
 #endif
 #include <esp_wifi.h>
+#include "EspNow2MqttClient.hpp"
 
 
 
 long timeSent, timeack, timePreSetup, timePostSetup;
 Display display = Display();
 
-void displayTimeArriving()
+void displayTimeArriving( response & rsp)
 {
   long arrivalTime = millis();
   char line[30];
@@ -23,11 +24,18 @@ void displayTimeArriving()
   long lapseRadioSetup = timePostSetup - timePreSetup;
 
   snprintf(line, sizeof(line), "time %d+ %d, %d", lapseRadioSetup, lapseSent, lapse);
-  display.print(4,line,true);
+  display.print(4,line,false);
+  Serial.println(line);
+  if  (1 == rsp.opResponses_count)
+  {
+    snprintf(line, sizeof(line), "status : %d", rsp.opResponses[0].result_code);
+  } else {
+    snprintf(line, sizeof(line), "wrong number of responses: %d", rsp.opResponses_count);
+  }
+  display.print(5,line,true);
   Serial.println(line);
 }
 
-#include "EspNow2MqttClient.hpp"
 
 byte sharedKey[16] = {10,200,23,4,50,3,99,82,39,100,211,112,143,4,15,106};
 byte sharedChannel = 8 ;
@@ -86,20 +94,20 @@ void setup() {
 
   int initcode;
   do {
-    display.print(5,"             TRYING");
+    display.print(6,"             TRYING");
     timePreSetup = millis();
     initcode = client.init();
     timePostSetup = millis();
     switch (initcode)
     {
     case 1:
-      display.print(5,"CANNOT INIT");
+      display.print(6,"CANNOT INIT");
       break;
     case 2:
-      display.print(5,"CANNOT PAIR");
+      display.print(6,"CANNOT PAIR");
       break;
     default:
-      display.print(5,"PAIRED");
+      display.print(6,"PAIRED");
       break;
     }
     delay(1001);
