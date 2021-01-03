@@ -34,6 +34,8 @@ byte sharedChannel = 8 ;
 uint8_t gatewayMac[6] = {0xA4, 0xCF, 0x12, 0x25, 0x9A, 0x30};
 EspNow2MqttClient client = EspNow2MqttClient("tstCl", sharedKey, gatewayMac, sharedChannel);
 
+int counter = 0;
+
 void onDataSentUpdateDisplay(bool success) {
   timeack = millis();
   display.print(3, success ? "Delivery Success" : "Delivery Fail", false);
@@ -72,8 +74,9 @@ void testSend()
 {
   display.print(1, "send", false);
   char pingNs[6];
-  itoa(client.pingCounter, pingNs, 10);
+  itoa(counter, pingNs, 10);
   client.doSend(pingNs, "spnowq", true);
+  counter ++;
 }
 
 void setup() {

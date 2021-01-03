@@ -11,8 +11,8 @@
 #include <PubSubClient.h>
 
 #define MQTT_CLIENT_ID "EspNow"
-#define MQTT_ROOT_TOPIC MQTT_CLIENT_ID
-#define MQTT_WILL_TOPIC MQTT_ROOT_TOPIC "_will"
+#define MQTT_ROOT_TOPIC MQTT_CLIENT_ID "/"
+#define MQTT_WILL_TOPIC MQTT_CLIENT_ID "_will"
 #define MQTT_WILL_QUOS 1
 #define MQTT_WILL_RETAIN false
 #define MQTT_WILL_MSG "EspNow2MqttBridge died!"
@@ -159,8 +159,18 @@ void EspNow2MqttGateway::pingHandler(const uint8_t * mac_addr, request_Ping & pi
 }
 void EspNow2MqttGateway::sendHandler(const uint8_t * mac_addr, request_Send & send, response_OpResponse & rsp)
 {
-    //TODO: implement
-    buildResponse(response_Result_NOK, "sin implementar", rsp);
+    if ( mqttClient.connected() ){
+        String queue = String(MQTT_ROOT_TOPIC);
+        queue.concat(send.queue);
+        bool sendStatus = mqttClient.publish(queue.c_str(), send.payload);
+        if (sendStatus) {
+            buildResponse(response_Result_OK, NULL, rsp);
+        } else {
+            buildResponse(response_Result_NOK, "cannot send", rsp);
+        }
+    } else {
+        buildResponse(response_Result_NOMQTT, "no mqtt connection", rsp);
+    }
 }
 void EspNow2MqttGateway::subscribeHandler(const uint8_t * mac_addr, request_Subscribe & subs, response_OpResponse & rsp)
 {
