@@ -36,7 +36,7 @@ void displayTimeArriving( response & rsp)
   {
     snprintf(line, sizeof(line), "status : %d", rsp.opResponses[0].result_code);
   } else {
-    snprintf(line, sizeof(line), "wrong number of responses: %d", rsp.opResponses_count);
+    snprintf(line, sizeof(line), "error: %d", rsp.opResponses_count);
   }
   display.print(DISPLAY_LINE_RESPONSE,line,true);
   Serial.println(line);

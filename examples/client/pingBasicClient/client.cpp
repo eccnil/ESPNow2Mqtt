@@ -13,7 +13,7 @@ uint8_t gatewayMac[6] = {0xA4, 0xCF, 0x12, 0x25, 0x9A, 0x30};
 EspNow2MqttClient client = EspNow2MqttClient("pingCl", sharedKey, gatewayMac, sharedChannel);
 
 /* optional function called when the ping comes back to client */
-void onResponseArrivalPrintIt() {
+void onResponseArrivalPrintIt(response & rsp) {
   Serial.println("pong!");
 }
 
