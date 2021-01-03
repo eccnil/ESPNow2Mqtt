@@ -42,7 +42,7 @@ public:
     void espNowHandler(const uint8_t * mac_addr, const uint8_t *incomingData, int len);
 private:
     void pingHandler(const uint8_t * mac_addr, request_Ping & ping, response_OpResponse & rsp);
-    void sendHandler(const uint8_t * mac_addr, request_Send & ping, response_OpResponse & rsp);
+    void sendHandler(const uint8_t * mac_addr, char* clientId, request_Send & ping, response_OpResponse & rsp);
     void subscribeHandler(const uint8_t * mac_addr, request_Subscribe & ping, response_OpResponse & rsp);
     void buildResponse (response_Result code, char * payload , response_OpResponse & rsp);
     void deserializeRequest(request &rq, const uint8_t *incomingData, int len);
@@ -134,7 +134,7 @@ void EspNow2MqttGateway::espNowHandler(const uint8_t * mac_addr, const uint8_t *
         switch (which_op)
         {
         case request_Operation_send_tag:
-            sendHandler(mac_addr, op.send, rsp);
+            sendHandler(mac_addr, decodedRequest.client_id, op.send, rsp);
             break;
         case request_Operation_qRequest_tag:
             subscribeHandler(mac_addr, op.qRequest, rsp);
@@ -157,10 +157,12 @@ void EspNow2MqttGateway::pingHandler(const uint8_t * mac_addr, request_Ping & pi
 {
     buildResponse(response_Result_OK, NULL, rsp);
 }
-void EspNow2MqttGateway::sendHandler(const uint8_t * mac_addr, request_Send & send, response_OpResponse & rsp)
+void EspNow2MqttGateway::sendHandler(const uint8_t * mac_addr, char* clientId, request_Send & send, response_OpResponse & rsp)
 {
     if ( mqttClient.connected() ){
         String queue = String(MQTT_ROOT_TOPIC);
+        queue.concat(clientId);
+        queue.concat("/");
         queue.concat(send.queue);
         bool sendStatus = mqttClient.publish(queue.c_str(), send.payload);
         if (sendStatus) {
