@@ -34,7 +34,7 @@ public:
     inline request_Operation createRequestOperationSubscribeQueue ( char* queue = "in", bool remove = true);
     bool doSend(char* payload = "", char* queue = "out", bool retain = true);
     void doPing();
-    //doSubscribe()
+    bool doSubscribe(char * queue);
     bool doRequests(request &rq);
     int pingCounter = 0;
 private:
@@ -169,6 +169,13 @@ bool EspNow2MqttClient::doSend(char* payload, char* queue, bool retain)
 {
     request_Operation sendOp = createRequestOperationSend(payload, queue, retain);
     request requests = addOperationToRequest(createRequest(), sendOp);
+    return this->doRequests(requests);
+}
+
+bool EspNow2MqttClient::doSubscribe(char * queue)
+{
+    request_Operation subscribeOp = createRequestOperationSubscribeQueue(queue,false);
+    request requests = addOperationToRequest(createRequest(), subscribeOp);
     return this->doRequests(requests);
 }
 
