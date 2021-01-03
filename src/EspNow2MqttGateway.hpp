@@ -45,6 +45,7 @@ private:
     void sendHandler(const uint8_t * mac_addr, char* clientId, request_Send & ping, response_OpResponse & rsp);
     void subscribeHandler(const uint8_t * mac_addr, request_Subscribe & ping, response_OpResponse & rsp);
     void buildResponse (response_Result code, char * payload , response_OpResponse & rsp);
+    String buildQueueName (char * clientId, char * name);
     void deserializeRequest(request &rq, const uint8_t *incomingData, int len);
     int serializeResponse (u8_t * buffer, response &rsp);
     friend void EspNow2Mqtt_onResponseSent(const uint8_t *mac_addr, esp_now_send_status_t status);
@@ -157,13 +158,11 @@ void EspNow2MqttGateway::pingHandler(const uint8_t * mac_addr, request_Ping & pi
 {
     buildResponse(response_Result_OK, NULL, rsp);
 }
+
 void EspNow2MqttGateway::sendHandler(const uint8_t * mac_addr, char* clientId, request_Send & send, response_OpResponse & rsp)
 {
     if ( mqttClient.connected() ){
-        String queue = String(MQTT_ROOT_TOPIC);
-        queue.concat(clientId);
-        queue.concat("/");
-        queue.concat(send.queue);
+        String queue = buildQueueName(clientId, send.queue);
         bool sendStatus = mqttClient.publish(queue.c_str(), send.payload);
         if (sendStatus) {
             buildResponse(response_Result_OK, NULL, rsp);
@@ -174,11 +173,21 @@ void EspNow2MqttGateway::sendHandler(const uint8_t * mac_addr, char* clientId, r
         buildResponse(response_Result_NOMQTT, "no mqtt connection", rsp);
     }
 }
+
 void EspNow2MqttGateway::subscribeHandler(const uint8_t * mac_addr, request_Subscribe & subs, response_OpResponse & rsp)
 {
     //TODO: implement
     buildResponse(response_Result_NOK, "sin implementar", rsp);
 }
+
+String EspNow2MqttGateway::buildQueueName (char * clientId, char * name){
+    String queue = String(MQTT_ROOT_TOPIC);
+    queue.concat(clientId);
+    queue.concat("/");
+    queue.concat(name);
+    return queue;
+}
+
 
 inline void EspNow2MqttGateway::buildResponse(response_Result code, char * payload , response_OpResponse & rsp)
 {
