@@ -10,8 +10,16 @@
 #include "EspNowUtil.hpp"
 #include <PubSubClient.h>
 
+#define MQTT_CLIENT_ID "EspNow"
+#define MQTT_ROOT_TOPIC MQTT_CLIENT_ID
+#define MQTT_WILL_TOPIC MQTT_ROOT_TOPIC "_will"
+#define MQTT_WILL_QUOS 1
+#define MQTT_WILL_RETAIN false
+#define MQTT_WILL_MSG "EspNow2MqttBridge died!"
+
 void EspNow2Mqtt_onResponseSent(const uint8_t *mac_addr, esp_now_send_status_t status);
 void EspNow2Mqtt_onDataReceived(const uint8_t * mac_addr, const uint8_t *incomingData, int len);
+void EspNow2Mqtt_mqttCallback(char* topic, byte* payload, unsigned int length);
 // -- class definition ----------------------------------------------------------------------------
 class EspNow2MqttGateway
 {
@@ -23,8 +31,11 @@ private:
     response emptyResponse = response_init_zero;
     request defaultRequest = request_init_default;
     EspNowUtil eNowUtil;
+    PubSubClient mqttClient;
+    char * mqttUser;
+    char * mqttPassword;
 public:
-    EspNow2MqttGateway(byte* key, int espnowChannel = 0);
+    EspNow2MqttGateway(byte* key, Client& cnx, const char * mqttServer, const int mtttport = 1883, int espnowChannel = 0, char* mqttUser = NULL, char* mqttPassword = NULL);
     ~EspNow2MqttGateway();
     int init();
     static EspNow2MqttGateway* getSingleton() {return espNow2MqttGatewaySingleton;}
@@ -38,6 +49,7 @@ private:
     int serializeResponse (u8_t * buffer, response &rsp);
     friend void EspNow2Mqtt_onResponseSent(const uint8_t *mac_addr, esp_now_send_status_t status);
     friend void EspNow2Mqtt_onDataReceived(const uint8_t * mac_addr, const uint8_t *incomingData, int len);
+    friend void EspNow2Mqtt_mqttCallback(char* topic, byte* payload, unsigned int length);
 public:
     std::function<void(bool ack, request&, response&)> onProcessedRequest = NULL;
     std::function<void(const uint8_t * mac_addr, const uint8_t *incomingData, int len)> onDataReceived = NULL;
@@ -62,27 +74,39 @@ void EspNow2Mqtt_onResponseSent(const uint8_t *mac_addr, esp_now_send_status_t s
     }
 }
 
+void EspNow2Mqtt_mqttCallback(char* topic, uint8_t* payload, unsigned int length){
+    Serial.println("not yet implemented"); //TODO: implement
+}
+
 void EspNow2Mqtt_subscribe(){
     esp_now_register_recv_cb(EspNow2Mqtt_onDataReceived);
     esp_now_register_send_cb(EspNow2Mqtt_onResponseSent);
 }
 
 // -- class implementation ------------------------------------------------------------------------
-EspNow2MqttGateway::EspNow2MqttGateway(byte* key, int espnowChannel):
-eNowUtil(espnowChannel)
+EspNow2MqttGateway::EspNow2MqttGateway(byte* key, Client& cnx, const char * mqttServer, const int mtttPort, int espnowChannel, char* mqttUser, char* mqttPassword):
+eNowUtil(espnowChannel), 
+mqttClient(mqttServer, mtttPort, EspNow2Mqtt_mqttCallback, cnx)
 {
     std::copy(key, key+crmsg.keySize, crmsg.key);
     espNow2MqttGatewaySingleton = this;
+    this->mqttUser = mqttUser; 
+    this->mqttPassword = mqttPassword;
 }
 
 EspNow2MqttGateway::~EspNow2MqttGateway()
 {
+    mqttClient.disconnect();
 }
 
 int EspNow2MqttGateway::init()
 {
-    Serial.println("registration ok");
+    //connecto to mqtt
+    Serial.println("connecting to mqtt");
+    bool mqttStatus = mqttClient.connect(MQTT_CLIENT_ID, mqttUser, mqttPassword, MQTT_WILL_TOPIC, MQTT_WILL_QUOS, MQTT_WILL_RETAIN, MQTT_WILL_MSG);
+    Serial.println(mqttStatus?"connected to mqtt":"cannot connect to mqtt");
     //init esp-now, gw will be registered as a handler for incoming messages
+    Serial.println("initiating espnow");
     if (esp_now_init() != ESP_OK) {
         Serial.println("Error initializing ESP-NOW");
     }

@@ -9,6 +9,9 @@
 #include "messages.pb.h"
 #include <WiFi.h>
 #include "secrets.h"
+#include <PubSubClient.h>
+#include <WiFiClient.h>
+
 
 // lcd display object creation for tests (not needed for gateway)
 Display display = Display();
@@ -23,7 +26,8 @@ Display display = Display();
 byte sharedKey[16] = {10,200,23,4,50,3,99,82,39,100,211,112,143,4,15,106}; 
 byte sharedChannel = 8; //avoid your wifi channel
 //gateway creation, needs initialization at setup, but after init mqtt
-EspNow2MqttGateway gw = EspNow2MqttGateway(sharedKey,sharedChannel);
+WiFiClient wifiClient;
+EspNow2MqttGateway gw = EspNow2MqttGateway(sharedKey, wifiClient, MQTT_SERVER_IP, 1883, sharedChannel);
 
 void setupWiFi(const char* ssid, const char* password){
     WiFi.mode(WIFI_MODE_STA);
