@@ -54,7 +54,7 @@ void onEspNowRecv(const uint8_t * mac_addr, const uint8_t *incomingData, int len
     EspNow2MqttClient *instance = EspNow2MqttClient::GetInstance();
     if (instance && instance -> onReceiveSomething){
         response reponses = response_init_default;
-        //instance -> deserialize(reponses, incomingData, len);
+        instance -> deserialize(reponses, incomingData, len);
         instance -> onReceiveSomething(reponses);
     }
 }

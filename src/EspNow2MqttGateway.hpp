@@ -200,14 +200,13 @@ void EspNow2MqttGateway::deserializeRequest(request &rq, const uint8_t *incoming
 inline int EspNow2MqttGateway::serializeResponse (u8_t * buffer, response &rsp)
 {
     //serialize
-    u8_t serializedBuffer[EN2MC_BUFFERSIZE];
-    int bufferLen = 0;
-    pb_ostream_t myStream = pb_ostream_from_buffer(buffer, EN2MC_BUFFERSIZE);
+    u8_t serializedBuffer[EN2MC_BUFFERSIZE];    
+    pb_ostream_t myStream = pb_ostream_from_buffer(serializedBuffer, EN2MC_BUFFERSIZE);
     pb_encode (&myStream, response_fields, &rsp);
     int messageLength = myStream.bytes_written;
 
     //encrypt
-    crmsg.encrypt(buffer,serializedBuffer,bufferLen);
+    crmsg.encrypt(buffer,serializedBuffer,messageLength);
 
     return messageLength;
 }
