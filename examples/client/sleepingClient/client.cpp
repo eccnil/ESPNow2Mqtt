@@ -9,12 +9,13 @@
 #endif
 #include <esp_wifi.h>
 #include "EspNow2MqttClient.hpp"
+#include "secrets.h"
 
 
 #define LED 2
 
 byte sharedKey[16] = {10,200,23,4,50,3,99,82,39,100,211,112,143,4,15,106};
-byte sharedChannel = 8 ;
+RTC_DATA_ATTR int sharedChannel = 8 ;
 uint8_t gatewayMac[6] = {0xA4, 0xCF, 0x12, 0x25, 0x9A, 0x30};
 EspNow2MqttClient client = EspNow2MqttClient("tstMltSlp", sharedKey, gatewayMac, sharedChannel);
 
@@ -23,8 +24,9 @@ request requests = client.createRequest();
 const request_Operation doOffOperation = client.createRequestOperationSend("OFF", "cmd");
 const request_Operation subscribeOperation = client.createRequestOperationSubscribeQueue("cmd");
 
-long timeEnd;
-int counter = 0;
+bool weHaveResponse = false;
+RTC_DATA_ATTR long timeEnd = 0;
+RTC_DATA_ATTR int counter = 0;
 
 // send multiple requests in a single package.
 // much fastesr and easier to handle the responses
@@ -74,6 +76,7 @@ void processResponse( response & rsp)
         do_OFF();
       }
     }
+    weHaveResponse = true;
   }
 }
 
@@ -94,9 +97,32 @@ int32_t getWiFiChannel(const char *ssid) {
   return 0;
 }
 
+void gotoSleep(){
+  
+  timeEnd = millis();
+  long timeMicros = 4000 * 1000L;
+  esp_sleep_enable_timer_wakeup(timeMicros);
+  esp_deep_sleep_start();
+}
+
 void setup() {
   Serial.begin(115200);
   pinMode(LED, OUTPUT);
+  weHaveResponse = false;
+
+  esp_sleep_wakeup_cause_t wakeup_reason;
+  wakeup_reason = esp_sleep_get_wakeup_cause();
+  switch(wakeup_reason){
+    //case ESP_SLEEP_WAKEUP_EXT0 : break;
+    //case ESP_SLEEP_WAKEUP_EXT1 : break; 
+    case ESP_SLEEP_WAKEUP_TIMER : 
+      break;
+    //case ESP_SLEEP_WAKEUP_TOUCHPAD : break;
+    //case ESP_SLEEP_WAKEUP_ULP : break;
+    default:
+      sharedChannel = getWiFiChannel(WIFI_SSID); 
+      break;
+  }
 
   int initcode;
   do {
@@ -106,11 +132,12 @@ void setup() {
 
   client.onSentACK = onDataSentUpdateDisplay;
   client.onReceiveSomething = processResponse;
+  testMultipleRequests ();
 }
 
 void loop() {
-    testMultipleRequests ();
-    timeEnd = millis();
-    delay(3000);
-    delay(3000);
+    if(weHaveResponse || millis() > 2000){
+      gotoSleep();
+    }
+    delay(1);
 }
