@@ -162,6 +162,7 @@ void EspNow2MqttClient::doPing()
     request requests = createRequest();
     request_Operation pingOp = createRequestOperationPing (pingCounter ++ );
     requests.operations[0] = pingOp;
+    requests.operations_count=1;
     this->doRequests(requests);
 }
 
@@ -171,6 +172,7 @@ bool EspNow2MqttClient::doSend(char* payload, char* queue, bool retain)
     request requests = createRequest();
     request_Operation sendOp = createRequestOperationSend(payload, queue, retain);
     requests.operations[0] = sendOp;
+    requests.operations_count=1;
     return this->doRequests(requests);
 }
 
@@ -179,6 +181,7 @@ bool EspNow2MqttClient::doSubscribe(char * queue)
     request requests = createRequest();
     request_Operation subscribeOp = createRequestOperationSubscribeQueue(queue,false);
     requests.operations[0] = subscribeOp;
+    requests.operations_count=1;
     return this->doRequests(requests);
 }
 
