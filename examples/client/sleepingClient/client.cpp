@@ -75,15 +75,17 @@ int32_t getWiFiChannel(const char *ssid) {
   return 0;
 }
 
+int counter = 0;
+
 void testMultiple()
 {
+  request requests;
   display.print(DISPLAY_LINE_OPERATION, "multiple", true);
-  auto requests = client.createRequest();
-  display.print(DISPLAY_LINE__, "1", true);
-  client.addOperationToRequest(requests, client.createRequestOperationSend("payload","out"));
-  display.print(DISPLAY_LINE__, "2", true);
-  client.addOperationToRequest(requests, client.createRequestOperationSend("payload","aux"));
-  display.print(DISPLAY_LINE__, "3", true);
+  requests = client.createRequest();
+  requests.operations[0] = client.createRequestOperationSend("payload", "queue");
+  requests.operations[1] = client.createRequestOperationPing(counter++);
+  requests.operations[2] = client.createRequestOperationSubscribeQueue("cmd");
+  requests.operations_count = 3;
   bool st = client.doRequests(requests);
   display.print(DISPLAY_LINE__, st?"sent":"error", true);
 }
