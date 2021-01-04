@@ -112,10 +112,10 @@ void setup() {
     gw.onProcessedRequest = displayRequestAndResponse;
     gw.onDataReceived = onEspNowRecv;
     EspNow2Mqtt_subscribe(); //FIXME: porque se tiene que llamar a esta función desde aqui??
-
 }
 
 void loop() {
     // put your main code here, to run repeatedly:
-    delay(1000);
+    delay(50);
+    gw.loop(); //required to fetch messages from mqtt
 }

@@ -9,6 +9,8 @@
 #include <esp_now.h>
 #include "EspNowUtil.hpp"
 #include <PubSubClient.h>
+#include <map>
+#include <set>
 
 #define MQTT_CLIENT_ID "EspNow"
 #define MQTT_ROOT_TOPIC MQTT_CLIENT_ID "/"
@@ -34,17 +36,21 @@ private:
     PubSubClient mqttClient;
     char * mqttUser;
     char * mqttPassword;
+    std::map <String,String> topics;
+    std::set <String> subscriptions;
 public:
     EspNow2MqttGateway(byte* key, Client& cnx, const char * mqttServer, const int mtttport = 1883, int espnowChannel = 0, char* mqttUser = NULL, char* mqttPassword = NULL);
     ~EspNow2MqttGateway();
     int init();
     static EspNow2MqttGateway* getSingleton() {return espNow2MqttGatewaySingleton;}
     void espNowHandler(const uint8_t * mac_addr, const uint8_t *incomingData, int len);
+    void loop();
 private:
+    void mqttConnect();
     void pingHandler(const uint8_t * mac_addr, request_Ping & ping, response_OpResponse & rsp);
     void sendHandler(const uint8_t * mac_addr, char* clientId, request_Send & ping, response_OpResponse & rsp);
-    void subscribeHandler(const uint8_t * mac_addr, request_Subscribe & ping, response_OpResponse & rsp);
-    void buildResponse (response_Result code, char * payload , response_OpResponse & rsp);
+    void subscribeHandler(const uint8_t * mac_addr, char* clientId, request_Subscribe & ping, response_OpResponse & rsp);
+    void buildResponse (response_Result code, const char * payload , response_OpResponse & rsp);
     String buildQueueName (char * clientId, char * name);
     void deserializeRequest(request &rq, const uint8_t *incomingData, int len);
     int serializeResponse (u8_t * buffer, response &rsp);
@@ -76,7 +82,11 @@ void EspNow2Mqtt_onResponseSent(const uint8_t *mac_addr, esp_now_send_status_t s
 }
 
 void EspNow2Mqtt_mqttCallback(char* topic, uint8_t* payload, unsigned int length){
-    Serial.println("not yet implemented"); //TODO: implement
+    EspNow2MqttGateway* instance = EspNow2MqttGateway::getSingleton();
+    if(instance){
+        instance->topics.insert(std::pair<String,String>(String(topic), String((char*)payload)));
+    }
+
 }
 
 void EspNow2Mqtt_subscribe(){
@@ -103,9 +113,7 @@ EspNow2MqttGateway::~EspNow2MqttGateway()
 int EspNow2MqttGateway::init()
 {
     //connecto to mqtt
-    Serial.println("connecting to mqtt");
-    bool mqttStatus = mqttClient.connect(MQTT_CLIENT_ID, mqttUser, mqttPassword, MQTT_WILL_TOPIC, MQTT_WILL_QUOS, MQTT_WILL_RETAIN, MQTT_WILL_MSG);
-    Serial.println(mqttStatus?"connected to mqtt":"cannot connect to mqtt");
+    mqttConnect();
     //init esp-now, gw will be registered as a handler for incoming messages
     Serial.println("initiating espnow");
     if (esp_now_init() != ESP_OK) {
@@ -138,7 +146,7 @@ void EspNow2MqttGateway::espNowHandler(const uint8_t * mac_addr, const uint8_t *
             sendHandler(mac_addr, decodedRequest.client_id, op.send, rsp);
             break;
         case request_Operation_qRequest_tag:
-            subscribeHandler(mac_addr, op.qRequest, rsp);
+            subscribeHandler(mac_addr, decodedRequest.client_id, op.qRequest, rsp);
             break;
         case request_Operation_ping_tag:
             pingHandler(mac_addr, op.ping, rsp);
@@ -174,10 +182,40 @@ void EspNow2MqttGateway::sendHandler(const uint8_t * mac_addr, char* clientId, r
     }
 }
 
-void EspNow2MqttGateway::subscribeHandler(const uint8_t * mac_addr, request_Subscribe & subs, response_OpResponse & rsp)
+void EspNow2MqttGateway::subscribeHandler(const uint8_t * mac_addr, char* clientId, request_Subscribe & subs, response_OpResponse & rsp)
 {
-    //TODO: implement
-    buildResponse(response_Result_NOK, "sin implementar", rsp);
+    String queue = buildQueueName(clientId, subs.queue);
+    auto subscriptionsIt = subscriptions.find(queue);
+    if (subscriptions.find(queue) != subscriptions.end()){ //subscribed
+        //subscribed & requesting data
+        auto data = topics.find(queue);
+        if (data != topics.end()){ //there are some data!
+            buildResponse(response_Result_OK, (data->second).c_str(), rsp);
+            topics.erase(data);
+        } else {
+            buildResponse(response_Result_NO_MSG, NULL, rsp);
+        }
+    } else { 
+        if (mqttClient.subscribe(queue.c_str())){
+            subscriptions.insert(queue);
+            buildResponse(response_Result_NO_MSG, "now subscribed", rsp);
+        } else {
+            buildResponse(response_Result_NOK, "cannot subscribe", rsp);
+        }
+    }
+}
+
+void EspNow2MqttGateway::mqttConnect(){
+    Serial.println("connecting to mqtt");
+    bool mqttStatus = mqttClient.connect(MQTT_CLIENT_ID, mqttUser, mqttPassword, MQTT_WILL_TOPIC, MQTT_WILL_QUOS, MQTT_WILL_RETAIN, MQTT_WILL_MSG);
+    Serial.println(mqttStatus?"connected to mqtt":"cannot connect to mqtt");
+}
+void EspNow2MqttGateway::loop (){
+    if(mqttClient.connected()){
+        mqttClient.loop();
+    } else {
+        mqttConnect();
+    }
 }
 
 String EspNow2MqttGateway::buildQueueName (char * clientId, char * name){
@@ -189,7 +227,7 @@ String EspNow2MqttGateway::buildQueueName (char * clientId, char * name){
 }
 
 
-inline void EspNow2MqttGateway::buildResponse(response_Result code, char * payload , response_OpResponse & rsp)
+inline void EspNow2MqttGateway::buildResponse(response_Result code, const char * payload , response_OpResponse & rsp)
 {
     rsp.result_code = code;
     if(payload){
