@@ -23,13 +23,16 @@ request requests = client.createRequest();
 const request_Operation doOffOperation = client.createRequestOperationSend("OFF", "cmd");
 const request_Operation subscribeOperation = client.createRequestOperationSubscribeQueue("cmd");
 
-
+long timeEnd;
 int counter = 0;
+
 // send multiple requests in a single package.
 // much fastesr and easier to handle the responses
 void testMultipleRequests()
 {
-  requests.operations[0] = client.createRequestOperationSend("payload", "queue");
+  char lastMeasure[15];
+  ltoa(timeEnd,lastMeasure,10);
+  requests.operations[0] = client.createRequestOperationSend(lastMeasure, "time");
   requests.operations[1] = client.createRequestOperationPing(counter++);
   requests.operations[2] = subscribeOperation;
   requests.operations_count = 3;
@@ -107,6 +110,7 @@ void setup() {
 
 void loop() {
     testMultipleRequests ();
+    timeEnd = millis();
     delay(3000);
     delay(3000);
 }
