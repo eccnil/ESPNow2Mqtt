@@ -28,7 +28,6 @@ public:
     static EspNow2MqttClient* GetInstance() {return singletonInstance;}
     int init();
     inline request createRequest (); 
-    inline request addOperationToRequest( request req, request_Operation operation);
     inline request_Operation createRequestOperationPing (int num);
     inline request_Operation createRequestOperationSend ( char* payload = "", char* queue = "out", bool retain = true);
     inline request_Operation createRequestOperationSubscribeQueue ( char* queue = "in", bool remove = true);
@@ -131,13 +130,6 @@ inline request EspNow2MqttClient::createRequest (  ) {
     return requests;
 }
 
-inline request EspNow2MqttClient::addOperationToRequest( request req, request_Operation operation){
-    req.operations[req.operations_count] = operation;
-    req.operations_count ++;
-    return req;
-}
-
-
 inline request_Operation EspNow2MqttClient::createRequestOperationSend ( char* payload , char* queue , bool retain )
 {
     request_Operation result = request_Operation_init_zero;
@@ -159,23 +151,26 @@ inline request_Operation EspNow2MqttClient::createRequestOperationSubscribeQueue
 
 void EspNow2MqttClient::doPing()
 {
+    request requests = createRequest();
     request_Operation pingOp = createRequestOperationPing (pingCounter ++ );
-    request requests = addOperationToRequest(createRequest(), pingOp);
+    requests.operations[0] = pingOp;
     this->doRequests(requests);
 }
 
 
 bool EspNow2MqttClient::doSend(char* payload, char* queue, bool retain)
 {
+    request requests = createRequest();
     request_Operation sendOp = createRequestOperationSend(payload, queue, retain);
-    request requests = addOperationToRequest(createRequest(), sendOp);
+    requests.operations[0] = sendOp;
     return this->doRequests(requests);
 }
 
 bool EspNow2MqttClient::doSubscribe(char * queue)
 {
+    request requests = createRequest();
     request_Operation subscribeOp = createRequestOperationSubscribeQueue(queue,false);
-    request requests = addOperationToRequest(createRequest(), subscribeOp);
+    requests.operations[0] = subscribeOp;
     return this->doRequests(requests);
 }
 
