@@ -18,15 +18,20 @@ byte sharedChannel = 8 ;
 uint8_t gatewayMac[6] = {0xA4, 0xCF, 0x12, 0x25, 0x9A, 0x30};
 EspNow2MqttClient client = EspNow2MqttClient("tstMltSlp", sharedKey, gatewayMac, sharedChannel);
 
+//better as a global, to save stack space (very small at esp and poorly used by espnow)
+request requests = client.createRequest(); 
+const request_Operation doOffOperation = client.createRequestOperationSend("OFF", "cmd");
+const request_Operation subscribeOperation = client.createRequestOperationSubscribeQueue("cmd");
+
+
 int counter = 0;
 // send multiple requests in a single package.
 // much fastesr and easier to handle the responses
 void testMultipleRequests()
 {
-  request requests = client.createRequest();
   requests.operations[0] = client.createRequestOperationSend("payload", "queue");
   requests.operations[1] = client.createRequestOperationPing(counter++);
-  requests.operations[2] = client.createRequestOperationSubscribeQueue("cmd");
+  requests.operations[2] = subscribeOperation;
   requests.operations_count = 3;
   bool st = client.doRequests(requests);
 }
@@ -43,10 +48,9 @@ void do_ON(){
 //telling mqtt the "thing" is off again
 void do_OFF()
 {
-  request requests = client.createRequest();
-  requests.operations[0] = client.createRequestOperationSend("OFF", "cmd");
+  requests.operations[0] = doOffOperation;
   requests.operations_count = 1;
-  bool st = client.doRequests(requests);
+  client.doRequests(requests);
 }
 
 //we only take care about the 3rd response, the queue subscription
