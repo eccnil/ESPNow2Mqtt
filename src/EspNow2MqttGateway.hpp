@@ -84,7 +84,16 @@ void EspNow2Mqtt_onResponseSent(const uint8_t *mac_addr, esp_now_send_status_t s
 void EspNow2Mqtt_mqttCallback(char* topic, uint8_t* payload, unsigned int length){
     EspNow2MqttGateway* instance = EspNow2MqttGateway::getSingleton();
     if(instance){
-        instance->topics.insert(std::pair<String,String>(String(topic), String((char*)payload)));
+        if (payload){
+            char charStr [length+1];
+            memcpy(charStr,payload,length);
+            charStr[length]=0;
+            String strPayload(charStr);
+            instance->topics.insert(std::pair<String,String>(String(topic), strPayload));
+        }
+        else{
+            instance->topics.erase(String(topic));
+        }
     }
 
 }
