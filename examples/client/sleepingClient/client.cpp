@@ -62,7 +62,6 @@ void do_OFF()
 //responses came in the same order of the requests
 void processResponse( response & rsp)
 {
-  Serial.print("response ");Serial.println(rsp.opResponses_count);
   if  (3 == rsp.opResponses_count){
     int cmdResultCode = rsp.opResponses[2].result_code;
     Serial.print("response code ");Serial.println(cmdResultCode);
@@ -74,8 +73,13 @@ void processResponse( response & rsp)
         do_ON();
         Serial.print("response doing off again ");
         do_OFF();
+      } else {
+        weHaveResponse = true;
       }
+    } else {
+      weHaveResponse = true;
     }
+  } else if (1 == rsp.opResponses_count ){ //cmd 'off' response
     weHaveResponse = true;
   }
 }
