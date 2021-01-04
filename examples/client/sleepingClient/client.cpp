@@ -127,7 +127,7 @@ void setup() {
   int initcode;
   do {
     initcode = client.init(sharedChannel);
-    delay(500);
+    if (initcode != 0) delay(50);
   } while (initcode != 0);
 
   client.onSentACK = onDataSentUpdateDisplay;
