@@ -15,7 +15,7 @@
 #define LED 2
 
 byte sharedKey[16] = {10,200,23,4,50,3,99,82,39,100,211,112,143,4,15,106};
-RTC_DATA_ATTR int sharedChannel = 8 ;
+RTC_DATA_ATTR int sharedChannel = 0 ;
 uint8_t gatewayMac[6] = {0xA4, 0xCF, 0x12, 0x25, 0x9A, 0x30};
 EspNow2MqttClient client = EspNow2MqttClient("tstMltSlp", sharedKey, gatewayMac, sharedChannel);
 
@@ -126,7 +126,7 @@ void setup() {
 
   int initcode;
   do {
-    initcode = client.init();
+    initcode = client.init(sharedChannel);
     delay(500);
   } while (initcode != 0);
 

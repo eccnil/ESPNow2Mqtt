@@ -27,6 +27,7 @@ public:
     ~EspNow2MqttClient();
     static EspNow2MqttClient* GetInstance() {return singletonInstance;}
     int init();
+    int init(int channel);
     inline request createRequest (); 
     inline request_Operation createRequestOperationPing (int num);
     inline request_Operation createRequestOperationSend ( char* payload = "", char* queue = "out", bool retain = true);
@@ -113,6 +114,13 @@ int EspNow2MqttClient::init()
     }
 
     return 0;
+}
+
+//to be used latter, when you did not know the espnow channel at the construction time
+int EspNow2MqttClient::init(int channel)
+{
+    this->channel = channel;
+    return init();
 }
 
 inline request_Operation EspNow2MqttClient::createRequestOperationPing (int num)
