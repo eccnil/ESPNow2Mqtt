@@ -8,6 +8,12 @@
 #include "messages.pb.h"
 #include <esp_now.h>
 #include <esp_wifi.h>
+#include <functional>
+#ifdef ESP32
+  #include <WiFi.h>
+#else
+  #include <ESP8266WiFi.h>
+#endif
 
 #define EN2MC_BUFFERSIZE 200
 
