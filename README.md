@@ -119,6 +119,16 @@ You need to share the key, channel and mac with your clients in order to allow o
 - key: all mensages are ciphered. use same key in all clients and the gateway. As the ciphered is performed by software there is no limit in the number of clients.
 - mac: all the clients need to know the mac of the gateway. In the example you can find a function to get it printed
 
+Miscelanea
+===========
+
+### actual projects using the library
+
+a brief list (building) of complete projects using the library
+
+- [home esp-now gateway](https://bitbucket.org/enrique_vicent/homeespnowgateway/src/master/), a gateway for more devices
+
+
 ### note on dependencies
 
 sometimes the dependencies are not resolved by itself add this manually if happens to you:
