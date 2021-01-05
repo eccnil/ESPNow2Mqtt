@@ -55,7 +55,7 @@ private:
     void buildResponse (response_Result code, const char * payload , response_OpResponse & rsp);
     String buildQueueName (char * clientId, char * name);
     void deserializeRequest(request &rq, const uint8_t *incomingData, int len);
-    int serializeResponse (u8_t * buffer, response &rsp);
+    int serializeResponse (uint8_t * buffer, response &rsp);
     friend void EspNow2Mqtt_onResponseSent(const uint8_t *mac_addr, esp_now_send_status_t status);
     friend void EspNow2Mqtt_onDataReceived(const uint8_t * mac_addr, const uint8_t *incomingData, int len);
     friend void EspNow2Mqtt_mqttCallback(char* topic, byte* payload, unsigned int length);
@@ -167,7 +167,7 @@ void EspNow2MqttGateway::espNowHandler(const uint8_t * mac_addr, const uint8_t *
         }
     }
     //send back response
-    u8_t outputBuffer[EN2MC_BUFFERSIZE];
+    uint8_t outputBuffer[EN2MC_BUFFERSIZE];
     int outputBufferLen = serializeResponse( outputBuffer, gwResponse );
 
     eNowUtil.send(mac_addr,outputBuffer, outputBufferLen);
@@ -257,10 +257,10 @@ void EspNow2MqttGateway::deserializeRequest(request &rq, const uint8_t *incoming
     pb_decode(&iStream, request_fields, &rq);
 }
 
-inline int EspNow2MqttGateway::serializeResponse (u8_t * buffer, response &rsp)
+inline int EspNow2MqttGateway::serializeResponse (uint8_t * buffer, response &rsp)
 {
     //serialize
-    u8_t serializedBuffer[EN2MC_BUFFERSIZE];    
+    uint8_t serializedBuffer[EN2MC_BUFFERSIZE];    
     pb_ostream_t myStream = pb_ostream_from_buffer(serializedBuffer, EN2MC_BUFFERSIZE);
     pb_encode (&myStream, response_fields, &rsp);
     int messageLength = myStream.bytes_written;
