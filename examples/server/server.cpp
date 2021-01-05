@@ -14,7 +14,7 @@
 
 
 // lcd display object creation for tests (not needed for gateway)
-Display display = Display();
+Display display = Display(true);
 #define DISPLAY_LINE_IN_MAC 1
 #define DISPLAY_LINE_IN 2
 #define DISPLAY_LINE_OPERATIONS 3

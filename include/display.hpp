@@ -15,8 +15,11 @@ U8G2_SSD1306_128X64_NONAME_F_SW_I2C u8g2(U8G2_R0, /* clock=*/ 15, /* data=*/ 4, 
 
 class Display {
   public:
-    int lineH = 9;;
-    Display () {}
+    int lineH = 9;
+    bool serialCopy;
+    Display (bool serialCopy = false) {
+        this->serialCopy = serialCopy;
+    }
     void init() {
         /*
         u8x8.begin();
@@ -39,6 +42,9 @@ class Display {
         u8g2.setDrawColor(1);
         u8g2.drawStr(0,linePX,s);
         if (refresh) u8g2.sendBuffer();
+        if (serialCopy){
+            Serial.println(s);
+        }
     }
 
 };
