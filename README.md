@@ -36,11 +36,19 @@ remember anycase that you cannot exced 200 bytes as an esp-now limitation
 Server
 ------
 
-You can build gateway server just taking the example as is. 
+You can build gateway server just taking the example as is. Or include this file and build your own:
+
+```c++
+#include <EspNow2MqttGateway.hpp>
+```
 
 You need to share the key, channel and mac with your clients in order to allow only YOUR clients to connect.
 
-### note on dependencies
+- channel: your ESP cannot use two channels, Therefore you need to configure your esp-now channel to coincide with your WiFi network. All your clients need to know and use this channel. On the sleeping client you can find how to get the channel of your WiFi
+- key: all mensages are ciphered. use same key in all clients and the gateway. As the ciphered is performed by software there is no limit in the number of clients.
+- mac: all the clients need to know the mac of the gateway. In the example you can find a function to get it printed
+
+### note on dependencies
 
 sometimes the dependencies are not resolved by itself add this manually if happens to you:
 
