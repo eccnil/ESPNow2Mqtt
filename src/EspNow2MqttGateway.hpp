@@ -12,6 +12,7 @@
 #include <map>
 #include <set>
 #include <functional>
+#include <stdint.h>
 
 #define MQTT_CLIENT_ID "EspNow"
 #define MQTT_ROOT_TOPIC MQTT_CLIENT_ID "/"
