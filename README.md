@@ -10,7 +10,8 @@ You can build both, the device part and the gateway. Some examples of both.
 Architecture
 ------------
 
-todo:
+![big picture](http://localhost:8008/png/VP8nJyCm48Nt-nMdR0mPA5iLHPMWOg8WCR0W8MCVgQN45-mpLONuxpXEMhK4rPFzxjtJToUlWYWliMlntJROMotH4u1rGlv3QS90Bh2_dYcB4qMbBYNiRm0S6qBBSaTVLjCtO3gQkvuTES5Ypz6djw42LS0utFvOrg7Vy6xny2boszgav7fsObMMzToGol03C87YLLbEmHFeYN84nQCq4ZTAQAVsU0cughWNoqwrTJtGDvVfxyV8R6WE-FyP4ljyfkfyqicBIrm_Fxrj7by0TClHOC6o9OzTyhmwH9FN7l9snyfP-25cI1_BozmAi29dqY_u1G00 "big picture")
+
 
 
 Client
