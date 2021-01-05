@@ -3,6 +3,7 @@
 
 #include <Arduino.h>
 #include "criptMsg.hpp"
+#include <PubSubClient.h>
 #include <pb_decode.h>
 #include <pb_encode.h>
 #include "messages.pb.h"
@@ -12,7 +13,6 @@
 #include <map>
 #include <set>
 #include <functional>
-#include <stdint.h>
 
 #define MQTT_CLIENT_ID "EspNow"
 #define MQTT_ROOT_TOPIC MQTT_CLIENT_ID "/"

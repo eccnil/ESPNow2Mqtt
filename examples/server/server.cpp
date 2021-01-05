@@ -6,11 +6,9 @@
 #endif
 #include "display.hpp"
 #include "EspNow2MqttGateway.hpp"
-#include "messages.pb.h"
 #include <WiFi.h>
-#include "secrets.h"
-#include <PubSubClient.h>
 #include <WiFiClient.h>
+#include "secrets.h"
 
 
 // lcd display object creation for tests (not needed for gateway)
