@@ -1,0 +1,61 @@
+@startuml big picture
+
+interface sensor1
+interface sensor2
+interface actuator3
+
+node iotDevice{
+    component "your code" as ucode
+    component EspNow2MqttClient
+    ucode <--> EspNow2MqttClient   
+}
+
+sensor1 )-- ucode
+sensor2 )-- ucode
+actuator3 -- ucode
+
+node gateway {
+    component "your code" <<optional>> as gcode
+    component EspNow2MqttGateway
+    gcode <-- EspNow2MqttGateway
+}
+
+EspNow2MqttClient <-> EspNow2MqttGateway : ESP_NOW
+
+cloud "other mqtt\n  devices" as other 
+
+EspNow2MqttGateway <-> other : mqtt
+
+@enduml
+
+
+@startuml internals
+'left to right direction
+
+
+'node client {
+    component EspNow2MqttClient{
+        component nanoPb <<binary serialization>> as nanopbc
+        component chacha <<symetric cyphering>> as chachac
+        nanopbc <..> chachac
+    }
+'}
+
+'node gateway {
+    component EspNow2MqttGateway{
+        component pubSubscribe <<mqtt library>> as mqttlib
+        component nanoPb <<binary serialization>> as nanopbg
+        component chacha <<symetric cyphering>> as chachag
+        mqttlib <..> nanopbg
+        nanopbg <..> chachag
+    }
+
+'}
+
+chachac <-> chachag: ESP-NOW
+
+node "mqtt service" as mqtt
+
+mqttlib <-> mqtt
+
+@enduml
