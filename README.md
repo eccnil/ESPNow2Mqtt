@@ -119,6 +119,21 @@ You need to share the key, channel and mac with your clients in order to allow o
 - key: all mensages are ciphered. use same key in all clients and the gateway. As the ciphered is performed by software there is no limit in the number of clients.
 - mac: all the clients need to know the mac of the gateway. In the example you can find a function to get it printed
 
+Versioning
+==========
+
+v1.1
+----
+
+- message format
+  - few operations on a batch (5) to save memory on the stack
+  - messageId: a new (optional) field on requests and responses that the gateway will return to you to ease response recognition, it an be used
+    - as a correlation id
+    - as a message type id
+    - ignored
+- gateway parametrizable identification, to allow having multiple gateways at same time (and extend your network reach)
+
+
 Miscelanea
 ===========
 
@@ -135,6 +150,8 @@ sometimes the dependencies are not resolved by itself add this manually if happe
 
 ```
 Crypto@^0.2.0
+Nanopb
+knolleary/PubSubClient@^2.8
 ```
 
 ### To compile the libary itself
