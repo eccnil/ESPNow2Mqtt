@@ -168,6 +168,7 @@ void EspNow2MqttGateway::espNowHandler(const uint8_t * mac_addr, const uint8_t *
             break;
         }
     }
+    gwResponse.message_type = decodedRequest.message_type;
     //send back response
     uint8_t outputBuffer[EN2MC_BUFFERSIZE];
     int outputBufferLen = serializeResponse( outputBuffer, gwResponse );

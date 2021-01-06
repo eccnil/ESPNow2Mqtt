@@ -38,9 +38,9 @@ public:
     inline request_Operation createRequestOperationPing (int num);
     inline request_Operation createRequestOperationSend ( char* payload = "", char* queue = "out", bool retain = true);
     inline request_Operation createRequestOperationSubscribeQueue ( char* queue = "in", bool remove = true);
-    bool doSend(char* payload = "", char* queue = "out", bool retain = true);
-    void doPing();
-    bool doSubscribe(char * queue);
+    bool doSend(char* payload = "", char* queue = "out", bool retain = true, int msgTpye = 0);
+    void doPing(int msgTpye = 0);
+    bool doSubscribe(char * queue, int msgTpye = 0);
     bool doRequests(request &rq);
     int pingCounter = 0;
 private:
@@ -163,31 +163,34 @@ inline request_Operation EspNow2MqttClient::createRequestOperationSubscribeQueue
     return result;
 }
 
-void EspNow2MqttClient::doPing()
+void EspNow2MqttClient::doPing(int msgTpye)
 {
     request requests = createRequest();
     request_Operation pingOp = createRequestOperationPing (pingCounter ++ );
     requests.operations[0] = pingOp;
     requests.operations_count=1;
+    requests.message_type = msgTpye;
     this->doRequests(requests);
 }
 
 
-bool EspNow2MqttClient::doSend(char* payload, char* queue, bool retain)
+bool EspNow2MqttClient::doSend(char* payload, char* queue, bool retain, int msgTpye)
 {
     request requests = createRequest();
     request_Operation sendOp = createRequestOperationSend(payload, queue, retain);
     requests.operations[0] = sendOp;
     requests.operations_count=1;
+    requests.message_type = msgTpye;
     return this->doRequests(requests);
 }
 
-bool EspNow2MqttClient::doSubscribe(char * queue)
+bool EspNow2MqttClient::doSubscribe(char * queue, int msgTpye)
 {
     request requests = createRequest();
     request_Operation subscribeOp = createRequestOperationSubscribeQueue(queue,false);
     requests.operations[0] = subscribeOp;
     requests.operations_count=1;
+    requests.message_type = msgTpye;
     return this->doRequests(requests);
 }
 
