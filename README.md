@@ -34,7 +34,7 @@ You cannot connect more than 6 nodes if you use ESP-Now with cyphering. To avoid
 
 You have a very simple protocol defined with nanopb (*protocol buffers for iot*) that allows to query and write to many mqtt topics with a simple message. Here you can see the [definition](messages.proto) and [limitations](messages.options). But you don't need to kown the details you can use the helper functios as detailed in the [examples folder](examples/client)
 
-Using this simple protocol ensures minimial overhead waste, but remember: ESP-Now limits your messages to 250 bytes, keep your messages low (we capped the payload to 200 bytes and 10 pub/subs per request)
+Using this simple protocol ensures minimial overhead waste, but remember: ESP-Now limits your messages to 250 bytes, keep your messages low (we capped the payload to 200 bytes and 5 pub/subs per request)
 
 Mqtt topics:
 -----------
