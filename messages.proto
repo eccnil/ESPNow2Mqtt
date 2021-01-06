@@ -29,6 +29,7 @@ message request {
     }
   string client_id = 1 ;
   repeated Operation operations = 2 ;
+  int32 message_type = 3;
 }
 
 message response {
@@ -43,4 +44,5 @@ message response {
         string payload = 2 ;
     }
     repeated OpResponse opResponses =1  ;
+    int32 message_type = 3;
 }

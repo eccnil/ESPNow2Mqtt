@@ -36,12 +36,13 @@ private:
     request defaultRequest = request_init_default;
     EspNowUtil eNowUtil;
     PubSubClient mqttClient;
+    char * mqttId;
     char * mqttUser;
     char * mqttPassword;
     std::map <String,String> topics;
     std::set <String> subscriptions;
 public:
-    EspNow2MqttGateway(byte* key, Client& cnx, const char * mqttServer, const int mtttport = 1883, int espnowChannel = 0, char* mqttUser = NULL, char* mqttPassword = NULL);
+    EspNow2MqttGateway(byte* key, Client& cnx, const char * mqttServer, const int mtttport = 1883, int espnowChannel = 0, char* mqttID = MQTT_CLIENT_ID, char* mqttUser = NULL, char* mqttPassword = NULL);
     ~EspNow2MqttGateway();
     int init();
     static EspNow2MqttGateway* getSingleton() {return espNow2MqttGatewaySingleton;}
@@ -106,7 +107,7 @@ void EspNow2Mqtt_subscribe(){
 }
 
 // -- class implementation ------------------------------------------------------------------------
-EspNow2MqttGateway::EspNow2MqttGateway(byte* key, Client& cnx, const char * mqttServer, const int mtttPort, int espnowChannel, char* mqttUser, char* mqttPassword):
+EspNow2MqttGateway::EspNow2MqttGateway(byte* key, Client& cnx, const char * mqttServer, const int mtttPort, int espnowChannel, char* mqttID, char* mqttUser, char* mqttPassword):
 eNowUtil(espnowChannel), 
 mqttClient(mqttServer, mtttPort, EspNow2Mqtt_mqttCallback, cnx)
 {
@@ -114,6 +115,7 @@ mqttClient(mqttServer, mtttPort, EspNow2Mqtt_mqttCallback, cnx)
     espNow2MqttGatewaySingleton = this;
     this->mqttUser = mqttUser; 
     this->mqttPassword = mqttPassword;
+    this->mqttId = mqttID;
 }
 
 EspNow2MqttGateway::~EspNow2MqttGateway()
@@ -166,6 +168,7 @@ void EspNow2MqttGateway::espNowHandler(const uint8_t * mac_addr, const uint8_t *
             break;
         }
     }
+    gwResponse.message_type = decodedRequest.message_type;
     //send back response
     uint8_t outputBuffer[EN2MC_BUFFERSIZE];
     int outputBufferLen = serializeResponse( outputBuffer, gwResponse );
@@ -218,7 +221,7 @@ void EspNow2MqttGateway::subscribeHandler(const uint8_t * mac_addr, char* client
 
 void EspNow2MqttGateway::mqttConnect(){
     Serial.println("connecting to mqtt");
-    bool mqttStatus = mqttClient.connect(MQTT_CLIENT_ID, mqttUser, mqttPassword, MQTT_WILL_TOPIC, MQTT_WILL_QUOS, MQTT_WILL_RETAIN, MQTT_WILL_MSG);
+    bool mqttStatus = mqttClient.connect(mqttId, mqttUser, mqttPassword, MQTT_WILL_TOPIC, MQTT_WILL_QUOS, MQTT_WILL_RETAIN, MQTT_WILL_MSG);
     Serial.println(mqttStatus?"connected to mqtt":"cannot connect to mqtt");
 }
 void EspNow2MqttGateway::loop (){
