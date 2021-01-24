@@ -48,6 +48,8 @@ public:
     static EspNow2MqttGateway* getSingleton() {return espNow2MqttGatewaySingleton;}
     void espNowHandler(const uint8_t * mac_addr, const uint8_t *incomingData, int len);
     void loop();
+    int getNumberOfSubscriptions(){return this->subscriptions.size();}
+    int getNumberOfMessages(){return this->topics.size();}
 private:
     void mqttConnect();
     void pingHandler(const uint8_t * mac_addr, request_Ping & ping, response_OpResponse & rsp);
@@ -63,6 +65,7 @@ private:
 public:
     std::function<void(bool ack, request&, response&)> onProcessedRequest = NULL;
     std::function<void(const uint8_t * mac_addr, const uint8_t *incomingData, int len)> onDataReceived = NULL;
+    std::function<void(char* topic, uint8_t* payload, unsigned int length)> onMqttDataReceived = NULL;
 };
 EspNow2MqttGateway* EspNow2MqttGateway::espNow2MqttGatewaySingleton = nullptr;;
 
@@ -96,6 +99,9 @@ void EspNow2Mqtt_mqttCallback(char* topic, uint8_t* payload, unsigned int length
         }
         else{
             instance->topics.erase(String(topic));
+        }
+        if(instance->onMqttDataReceived){
+            instance->onMqttDataReceived(topic, payload, length);
         }
     }
 

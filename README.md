@@ -133,6 +133,14 @@ v1.1
     - ignored
 - gateway parametrizable identification, to allow having multiple gateways at same time (and extend your network reach)
 
+v1.2
+----
+
+- callback when mqtt data is received
+- methods
+  - `int getNumberOfSubscriptions()` gives the number of mqtt topics being listened
+  - `int getNumberOfMessages()` gives the number of messages fetched and not (yet) delivered
+
 
 Miscelanea
 ===========
