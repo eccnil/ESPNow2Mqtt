@@ -50,6 +50,7 @@ public:
     void loop();
     int getNumberOfSubscriptions(){return this->subscriptions.size();}
     int getNumberOfMessages(){return this->topics.size();}
+    void sendGwMqttMessage(char*topic, char*payload);
 private:
     void mqttConnect();
     void pingHandler(const uint8_t * mac_addr, request_Ping & ping, response_OpResponse & rsp);
@@ -280,5 +281,17 @@ inline int EspNow2MqttGateway::serializeResponse (uint8_t * buffer, response &rs
     return messageLength;
 }
 
+void EspNow2MqttGateway::sendGwMqttMessage(char*topic, char*payload)
+{
+    if ( mqttClient.connected() ){
+        String queue = buildQueueName("gw", topic);
+        bool sendStatus = mqttClient.publish(queue.c_str(), payload);
+        if (!sendStatus) {
+            Serial.printf ("Error cannot sendGwMqttMessage to %s topic {%s} because code %i", topic, payload, sendStatus);
+        }
+    } else {
+        Serial.printf ("Error cannot sendGwMqttMessage to %s topic {%s} because not connected to mqtt", topic, payload);
+    }
+}
 
 #endif // _ESPNOW2MQTTGATEWAY_HPP_

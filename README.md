@@ -141,6 +141,11 @@ v1.2
   - `int getNumberOfSubscriptions()` gives the number of mqtt topics being listened
   - `int getNumberOfMessages()` gives the number of messages fetched and not (yet) delivered
 
+v1.3
+---
+
+- sendGwMqttMessage function that allows to publish internal gw user info (for example to send the chip temperature)
+
 
 Miscelanea
 ===========
