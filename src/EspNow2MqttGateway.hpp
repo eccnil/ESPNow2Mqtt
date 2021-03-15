@@ -58,7 +58,7 @@ private:
     void subscribeHandler(const uint8_t * mac_addr, char* clientId, request_Subscribe & ping, response_OpResponse & rsp);
     void buildResponse (response_Result code, const char * payload , response_OpResponse & rsp);
     String buildQueueName (char * clientId, char * name);
-    void deserializeRequest(request &rq, const uint8_t *incomingData, int len);
+    bool deserializeRequest(request &rq, const uint8_t *incomingData, int len);
     int serializeResponse (uint8_t * buffer, response &rsp);
     friend void EspNow2Mqtt_onResponseSent(const uint8_t *mac_addr, esp_now_send_status_t status);
     friend void EspNow2Mqtt_onDataReceived(const uint8_t * mac_addr, const uint8_t *incomingData, int len);
@@ -146,41 +146,48 @@ void EspNow2MqttGateway::espNowHandler(const uint8_t * mac_addr, const uint8_t *
 {
     //create request object
     decodedRequest = defaultRequest;
-    deserializeRequest(decodedRequest,incomingData,len);
-    
-    //re-init response object
-    gwResponse = emptyResponse;
-    gwResponse.opResponses_count = decodedRequest.operations_count;
+    bool decoded = deserializeRequest(decodedRequest,incomingData,len);
 
-    //call handlers
-    int count;
-    for (count = 0; count < decodedRequest.operations_count; count++)
-    {
-        auto &op = decodedRequest.operations[count].op;
-        auto &which_op = decodedRequest.operations[count].which_op;
-        response_OpResponse &rsp = gwResponse.opResponses[count];
+    if (decoded){
+        //re-init response object
+        gwResponse = emptyResponse;
+        gwResponse.opResponses_count = decodedRequest.operations_count;
 
-        switch (which_op)
+        //call handlers
+        int count;
+        for (count = 0; count < decodedRequest.operations_count; count++)
         {
-        case request_Operation_send_tag:
-            sendHandler(mac_addr, decodedRequest.client_id, op.send, rsp);
-            break;
-        case request_Operation_qRequest_tag:
-            subscribeHandler(mac_addr, decodedRequest.client_id, op.qRequest, rsp);
-            break;
-        case request_Operation_ping_tag:
-            pingHandler(mac_addr, op.ping, rsp);
-            break;
-        default:
-            break;
-        }
-    }
-    gwResponse.message_type = decodedRequest.message_type;
-    //send back response
-    uint8_t outputBuffer[EN2MC_BUFFERSIZE];
-    int outputBufferLen = serializeResponse( outputBuffer, gwResponse );
+            auto &op = decodedRequest.operations[count].op;
+            auto &which_op = decodedRequest.operations[count].which_op;
+            response_OpResponse &rsp = gwResponse.opResponses[count];
 
-    eNowUtil.send(mac_addr,outputBuffer, outputBufferLen);
+            switch (which_op)
+            {
+            case request_Operation_send_tag:
+                sendHandler(mac_addr, decodedRequest.client_id, op.send, rsp);
+                break;
+            case request_Operation_qRequest_tag:
+                subscribeHandler(mac_addr, decodedRequest.client_id, op.qRequest, rsp);
+                break;
+            case request_Operation_ping_tag:
+                pingHandler(mac_addr, op.ping, rsp);
+                break;
+            default:
+                break;
+            }
+        }
+        gwResponse.message_type = decodedRequest.message_type;
+        //send back response
+        uint8_t outputBuffer[EN2MC_BUFFERSIZE];
+        int outputBufferLen = serializeResponse( outputBuffer, gwResponse );
+
+        eNowUtil.send(mac_addr,outputBuffer, outputBufferLen);
+    }
+    else {
+        //TODO: cambiar por un callback
+        Serial.println("error decoding payload");
+    }
+    
 }
 
 void EspNow2MqttGateway::pingHandler(const uint8_t * mac_addr, request_Ping & ping, response_OpResponse & rsp)
@@ -256,7 +263,7 @@ inline void EspNow2MqttGateway::buildResponse(response_Result code, const char *
     }
 }
 
-void EspNow2MqttGateway::deserializeRequest(request &rq, const uint8_t *incomingData, int len)
+bool EspNow2MqttGateway::deserializeRequest(request &rq, const uint8_t *incomingData, int len)
 {
     //decrypt
     uint8_t decripted[len];
@@ -264,7 +271,7 @@ void EspNow2MqttGateway::deserializeRequest(request &rq, const uint8_t *incoming
 
     //deserialize
     pb_istream_t iStream = pb_istream_from_buffer(decripted, len);
-    pb_decode(&iStream, request_fields, &rq);
+    return pb_decode(&iStream, request_fields, &rq);
 }
 
 inline int EspNow2MqttGateway::serializeResponse (uint8_t * buffer, response &rsp)
