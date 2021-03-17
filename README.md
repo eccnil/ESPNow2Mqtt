@@ -146,6 +146,11 @@ v1.3
 
 - sendGwMqttMessage function that allows to publish internal gw user info (for example to send the chip temperature)
 
+v1.3.1
+---
+
+- resubscribe to all topics when reconnectig to mqtt server (lost of connection)
+
 
 Miscelanea
 ===========

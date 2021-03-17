@@ -53,6 +53,7 @@ public:
     void sendGwMqttMessage(char*topic, char*payload);
 private:
     void mqttConnect();
+    void resusbcribe();
     void pingHandler(const uint8_t * mac_addr, request_Ping & ping, response_OpResponse & rsp);
     void sendHandler(const uint8_t * mac_addr, char* clientId, request_Send & ping, response_OpResponse & rsp);
     void subscribeHandler(const uint8_t * mac_addr, char* clientId, request_Subscribe & ping, response_OpResponse & rsp);
@@ -184,7 +185,6 @@ void EspNow2MqttGateway::espNowHandler(const uint8_t * mac_addr, const uint8_t *
         eNowUtil.send(mac_addr,outputBuffer, outputBufferLen);
     }
     else {
-        //TODO: cambiar por un callback
         Serial.println("error decoding payload");
     }
     
@@ -238,11 +238,20 @@ void EspNow2MqttGateway::mqttConnect(){
     bool mqttStatus = mqttClient.connect(mqttId, mqttUser, mqttPassword, MQTT_WILL_TOPIC, MQTT_WILL_QUOS, MQTT_WILL_RETAIN, MQTT_WILL_MSG);
     Serial.println(mqttStatus?"connected to mqtt":"cannot connect to mqtt");
 }
+
+void EspNow2MqttGateway::resusbcribe(){
+    for (auto subscription : this->subscriptions){
+        mqttClient.subscribe(subscription.c_str());
+    }
+    Serial.printf("resuscribed to %d topics\n", this->getNumberOfSubscriptions());
+}
+
 void EspNow2MqttGateway::loop (){
     if(mqttClient.connected()){
         mqttClient.loop();
     } else {
         mqttConnect();
+        resusbcribe();
     }
 }
 
