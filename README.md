@@ -151,6 +151,10 @@ v1.3.1
 
 - resubscribe to all topics when reconnectig to mqtt server (lost of connection)
 
+v1.3.2
+---
+
+- renaming files to increase visualization of the library in platform.io
 
 Miscelanea
 ===========
