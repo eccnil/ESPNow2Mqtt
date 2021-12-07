@@ -160,6 +160,7 @@ v1.3.3
 ---
 
 - fixing version of protobuff
+- changed manifesto format
 
 Miscelanea
 ===========
