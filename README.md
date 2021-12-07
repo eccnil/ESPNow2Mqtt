@@ -156,6 +156,11 @@ v1.3.2
 
 - renaming files to increase visualization of the library in platform.io
 
+v1.3.3
+---
+
+- fixing version of protobuff
+
 Miscelanea
 ===========
 
