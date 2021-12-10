@@ -174,6 +174,7 @@ v1.3.4
 - changed manifesto format
 - nanoPb version updated to 0.4.5
 - [client](ClientManual.md) and [gateway](GatewayManual.md) manuals
+- include library.json to fix dependences version issues
 
 Miscelanea
 ===========
