@@ -174,6 +174,11 @@ v1.3.3
 - fixing version of protobuff
 - changed manifesto format
 
+v1.3.4
+---
+
+- [client](ClientManual.md) and [gateway](GatewayManual.md) manuals
+
 Miscelanea
 ===========
 
