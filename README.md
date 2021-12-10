@@ -168,11 +168,12 @@ v1.3.2
 
 - renaming files to increase visualization of the library in platform.io
 
-v1.3.3
+v1.3.4
 ---
 
 - fixing version of protobuff
 - changed manifesto format
+- nanoPb version updated to 0.4.5
 
 Miscelanea
 ===========
