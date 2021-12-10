@@ -22,7 +22,7 @@ Display display = Display(true);
 //shared criptokey, must be the same in all devices. create your own
 
 byte sharedKey[16] = {10,200,23,4,50,3,99,82,39,100,211,112,143,4,15,106}; 
-byte sharedChannel = 8; //avoid your wifi channel
+byte sharedChannel = 8; 
 //gateway creation, needs initialization at setup, but after init mqtt
 WiFiClient wifiClient;
 EspNow2MqttGateway gw = EspNow2MqttGateway(sharedKey, wifiClient, MQTT_SERVER_IP, 1883, sharedChannel, "gardenGW");

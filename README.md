@@ -55,7 +55,7 @@ Where
 Simplicity: our *blink* version
 ----------
 
-Sf you look at the examples folder you may see lots of lines of code. But simplicity is a goal. If you don't want to have fancy features you can have as little source as this:
+If you look at the [examples folder](examples) you may see lots of lines of code. But simplicity is a goal. If you don't want to have fancy features you can have as little source as this:
 
 ```c++
 #include <Arduino.h>
@@ -83,6 +83,14 @@ void loop() {
 }
 ```
 
+You may recognice the basic blink program where some have been added to, briefly:
+
+- the include of EspNow2MqttClient, as this example is about a client
+- a first block of shared data that is also in your gateway (and in all your devices) and proides privacy.
+- client init sentence, to pair with the gateway 
+- client doSend sentences, to send data
+
+The result of this program is the status of the led also shown in a mqtt queue called \<something\>/testLib
 
 Client
 ======
@@ -104,6 +112,8 @@ you can send 4 types of messages:
 
 remember anycase that you cannot exced 200 bytes as an esp-now limitation
 
+For more information refer to [Client User Manual](ClientManual.md). 
+
 Server
 ======
 
@@ -118,6 +128,8 @@ You need to share the key, channel and mac with your clients in order to allow o
 - channel: your ESP cannot use two channels, Therefore you need to configure your esp-now channel to coincide with your WiFi network. All your clients need to know and use this channel. On the sleeping client you can find how to get the channel of your WiFi
 - key: all mensages are ciphered. use same key in all clients and the gateway. As the ciphered is performed by software there is no limit in the number of clients.
 - mac: all the clients need to know the mac of the gateway. In the example you can find a function to get it printed
+
+For more information refer to [Gateway User Manual](GatewayManual.md)
 
 Versioning
 ==========
