@@ -1,4 +1,4 @@
-/* example with LCD screen that sends single mesages*/
+/* example with LCD screen that sends single messages*/
 
 #include <Arduino.h>
 #include "display.hpp"
@@ -19,7 +19,7 @@ RTC_DATA_ATTR int sharedChannel = 0 ;
 uint8_t gatewayMac[6] = {0xA4, 0xCF, 0x12, 0x25, 0x9A, 0x30};
 EspNow2MqttClient client = EspNow2MqttClient("tstMltSlp", sharedKey, gatewayMac, sharedChannel);
 
-//better as a global, to save stack space (very small at esp and poorly used by espnow)
+// better as a global, to save stack space (very small at esp and poorly used by espnow)
 request requests = client.createRequest(); 
 const request_Operation doOffOperation = client.createRequestOperationSend("OFF", "cmd");
 const request_Operation subscribeOperation = client.createRequestOperationSubscribeQueue("cmd");
@@ -29,7 +29,7 @@ RTC_DATA_ATTR long timeEnd = 0;
 RTC_DATA_ATTR int counter = 0;
 
 // send multiple requests in a single package.
-// much fastesr and easier to handle the responses
+// much faster and easier to handle the responses
 void testMultipleRequests()
 {
   char lastMeasure[15];
@@ -42,15 +42,15 @@ void testMultipleRequests()
 }
 
 
-//simulates doing something, like activateing a releay or something
-//actually blinks the onboard led during a sencod
+// simulates doing something, like activateing a relay or something
+// actually blinks the onboard led during a second
 void do_ON(){
     digitalWrite(LED, HIGH);
     delay(1001);
     digitalWrite(LED, LOW);
 }
 
-//telling mqtt the "thing" is off again
+// telling mqtt the "thing" is off again
 void do_OFF()
 {
   requests.operations[0] = doOffOperation;
@@ -58,8 +58,8 @@ void do_OFF()
   client.doRequests(requests);
 }
 
-//we only take care about the 3rd response, the queue subscription
-//responses came in the same order of the requests
+// we only take care about the 3rd response, the queue subscription
+// responses came in the same order of the requests
 void processResponse( response & rsp)
 {
   if  (3 == rsp.opResponses_count){
@@ -84,12 +84,12 @@ void processResponse( response & rsp)
   }
 }
 
-//doing nothing
+// doing nothing
 void onDataSentUpdateDisplay(bool success) {
   //display.print(DISPLAY_LINE_DELIVERY_STATUS, success ? "Delivery Success" : "Delivery Fail", false);
 }
 
-//we can init our channel number from wifi ssid, but it consts seconds so only in case of restarting
+// we can init our channel number from wifi ssid, but it consts seconds so only in case of restarting
 int32_t getWiFiChannel(const char *ssid) {
   if (int32_t n = WiFi.scanNetworks()) {
       for (uint8_t i=0; i<n; i++) {
@@ -102,7 +102,6 @@ int32_t getWiFiChannel(const char *ssid) {
 }
 
 void gotoSleep(){
-  
   timeEnd = millis();
   long timeMicros = 4000 * 1000L;
   esp_sleep_enable_timer_wakeup(timeMicros);
