@@ -6,7 +6,7 @@
         "type": "git",
         "url": "https://github.com/eccnil/ESPNow2Mqtt"
     },
-    "description" : "Use Esp-now to connect to mqtt and send and recive data. Esp-now is more suitable for battery powrered devices. With this library you can build both, the gateway to mqtt and the client able to send data and respond to commands",
+    "description" : "Use Esp-now to connect to mqtt and send and receive data. Esp-now is more suitable for battery powered devices. With this library you can build both, the gateway to mqtt and the client able to send data and respond to commands",
     "keywords":["espnow","mqtt","esp32"],
     "authors":{
         "name": "Enrique Vicent",

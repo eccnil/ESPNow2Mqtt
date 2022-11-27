@@ -30,7 +30,7 @@ ESP-Now has some limitations that influenced our design:
 
 You cannot connect more than 6 nodes if you use ESP-Now with cyphering. To avoid this we have decided to not using it and using our own cyphering with a software layer based on Chacha (as LoraWan does). 
 
-*The idea was taken from [EnigmaIOT](https://gmag11.github.io/EnigmaIOT/html/index.html) but we decided to build from scrach because our goal is to provide a library instead of a framework where you can place your code in.*
+*The idea was taken from [EnigmaIOT](https://gmag11.github.io/EnigmaIOT/html/index.html) but we decided to build from scratch because our goal is to provide a library instead of a framework where you can place your code in.*
 
 You have a very simple protocol defined with nanopb (*protocol buffers for iot*) that allows to query and write to many mqtt topics with a simple message. Here you can see the [definition](messages.proto) and [limitations](messages.options). But you don't need to kown the details you can use the helper functios as detailed in the [examples folder](examples/client)
 
@@ -41,7 +41,7 @@ Mqtt topics:
 
 As there is a message size cap, is not sensible to use full canonical topics names, because they whould consume all the available bandwith.
 
-Therefore you only need to especify the las part (call it the name). You can find your data in a topica called:
+Therefore you only need to specify the last part (call it the name). You can find your data in a topic called:
 
 EspNow/clientId/name
 
@@ -95,7 +95,7 @@ The result of this program is the status of the led also shown in a mqtt queue c
 Client
 ======
 
-as a client you need to add this dependence to you program:
+as a client you need to add this dependency to your program:
 
 ```c++
 #include <EspNow2MqttClient.hpp>
@@ -110,7 +110,7 @@ you can send 4 types of messages:
 3. subscribe: gives the content of a queue when it changes. this message creates a subscription in the gateway, when the gateway gets the message stores it and delivers to you on the next 'subscribe' message with the same queue
 4. multiple: any combination of up to 10 atomic messages (ping, send or subscribe). the response will be an array with the same order
 
-remember anycase that you cannot exced 200 bytes as an esp-now limitation
+remember anycase that you cannot exceed 200 bytes as an esp-now limitation
 
 For more information refer to [Client User Manual](ClientManual.md). 
 
@@ -123,11 +123,11 @@ You can build gateway server just taking the example as is. Or include this file
 #include <EspNow2MqttGateway.hpp>
 ```
 
-You need to share the key, channel and mac with your clients in order to allow only YOUR clients to connect.
+You need to share the key, channel and MAC with your clients in order to allow only your clients to connect.
 
 - channel: your ESP cannot use two channels, Therefore you need to configure your esp-now channel to coincide with your WiFi network. All your clients need to know and use this channel. On the sleeping client you can find how to get the channel of your WiFi
 - key: all mensages are ciphered. use same key in all clients and the gateway. As the ciphered is performed by software there is no limit in the number of clients.
-- mac: all the clients need to know the mac of the gateway. In the example you can find a function to get it printed
+- mac: all the clients need to know the MAC of the gateway. In the example you can find a function to get it printed
 
 For more information refer to [Gateway User Manual](GatewayManual.md)
 

@@ -53,7 +53,7 @@ public:
     void sendGwMqttMessage(char*topic, char*payload);
 private:
     void mqttConnect();
-    void resusbcribe();
+    void resubscribe();
     void pingHandler(const uint8_t * mac_addr, request_Ping & ping, response_OpResponse & rsp);
     void sendHandler(const uint8_t * mac_addr, char* clientId, request_Send & ping, response_OpResponse & rsp);
     void subscribeHandler(const uint8_t * mac_addr, char* clientId, request_Subscribe & ping, response_OpResponse & rsp);
@@ -239,11 +239,11 @@ void EspNow2MqttGateway::mqttConnect(){
     Serial.println(mqttStatus?"connected to mqtt":"cannot connect to mqtt");
 }
 
-void EspNow2MqttGateway::resusbcribe(){
+void EspNow2MqttGateway::resubscribe(){
     for (auto subscription : this->subscriptions){
         mqttClient.subscribe(subscription.c_str());
     }
-    Serial.printf("resuscribed to %d topics\n", this->getNumberOfSubscriptions());
+    Serial.printf("resubscribed to %d topics\n", this->getNumberOfSubscriptions());
 }
 
 void EspNow2MqttGateway::loop (){
@@ -251,7 +251,7 @@ void EspNow2MqttGateway::loop (){
         mqttClient.loop();
     } else {
         mqttConnect();
-        resusbcribe();
+        resubscribe();
     }
 }
 
